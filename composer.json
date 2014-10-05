@@ -1,0 +1,17 @@
+{
+    "require": {
+        "fabpot/goutte": "1.0.3",
+			  "jonnyw/php-phantomjs": "3.*"
+    },
+    "scripts": {
+      "post-install-cmd": [
+        "PhantomInstaller\\Installer::installPhantomJS"
+      ],
+      "post-update-cmd": [
+        "PhantomInstaller\\Installer::installPhantomJS"
+      ]
+    },
+    "config": {
+      "bin-dir": "bin"
+    }
+}
