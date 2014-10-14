@@ -1,7 +1,10 @@
 {
     "require": {
-        "fabpot/goutte": "1.0.3",
-			  "jonnyw/php-phantomjs": "3.*"
+        "aws/aws-sdk-php": "2.7.0",
+        "guzzlehttp/guzzle": "~4.0",
+			  "jonnyw/php-phantomjs": "3.*",
+        "sasezaki/diggin-guzzle4-charset-subscriber": "0.1",
+        "symfony/dom-crawler": "2.6.*@dev"
     },
     "scripts": {
       "post-install-cmd": [

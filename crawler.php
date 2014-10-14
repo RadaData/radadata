@@ -1,31 +1,34 @@
 <?php
 
 require 'includes/bootstrap.php';
-require 'includes/download.php';
-require 'includes/operations/discover.php';
-
-define('SUCCESS', 10);
-define('FAILURE', 3);
 
 define('LAW_PAGE', 1);
+
+define('UNKNOWN', 0);
+define('HAS_TEXT', 1);
+define('NO_TEXT', 10);
 
 define('NOT_DOWNLOADED', 0);
 define('DOWNLOADED', 1);
 
-
-global $website;
-$website = array(
-  'regexp' => '^(http://)*zakon(0-9*)\.rada\.gov\.ua',
-  'url' => 'http://zakon4.rada.gov.ua',
-  'dir' => 'zakon.rada.gov.ua'
-);
-
-
 $command = $argv[1];
+$argument = isset($argv[2]) ? $argv[2] : null;
 
 switch ($command) {
   case "discover":
-    discover_urls();
+    discover($argument);
+    break;
+  case "update":
+    update($argument);
+    break;
+  case "download_laws":
+    download_laws($argument);
+    break;
+  case "clean_jobs":
+    clean_jobs($argument);
+    break;
+  case "check":
+    check($argument);
     break;
   case "help":
     print('Type "php crawler.php discover" to find new articles.' . "\n" .
