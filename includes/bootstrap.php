@@ -36,6 +36,9 @@ function _log($message, $style = 'default')
         $output = "\n\n" . $output;
     }
     $args = shell_parameters();
+    if (!is_dir(__DIR__ . '/../logs')) {
+      mkdir(__DIR__ . '/../logs');
+    }
     $log_file = isset($args['log']) ? $args['log'] : __DIR__ . '/../logs/log.txt';
     file_put_contents($log_file, $output, FILE_APPEND);
 
