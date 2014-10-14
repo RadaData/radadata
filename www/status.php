@@ -6,7 +6,7 @@ chdir('../');
 
 print "<pre>";
 
-$result = (bool)shell_exec('pgrep -f "crawler.php"');
+$result = count(explode("\n", shell_exec('pgrep -f "crawler.php"'))) > 2;
 print "Download process status: " . ($result ? 'RUNNING' : 'STOPPED');
 check();
 
