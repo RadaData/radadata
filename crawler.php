@@ -11,8 +11,12 @@ define('NO_TEXT', 10);
 define('NOT_DOWNLOADED', 0);
 define('DOWNLOADED', 1);
 
+if (empty($argv[1])) {
+  die();
+}
+
 $command = $argv[1];
-$argument = isset($argv[2]) ? $argv[2] : null;
+$argument = isset($argv[2]) ? $argv[2] : NULL;
 
 switch ($command) {
   case "discover":

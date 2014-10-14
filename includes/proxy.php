@@ -23,7 +23,7 @@ foreach ($reservations as $reservation) {
 }
 
 
-exec('pkill ssh');
+exec('pkill -f "ssh -o UserKnownHostsFile"');
 db('misc')->exec('DELETE FROM proxies');
 
 if (!count($ips)) {
