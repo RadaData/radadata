@@ -7,10 +7,6 @@ if (empty($argv[1])) {
   die();
 }
 
-$me = getmypid();
-exec('pgrep -f "crawler.php" | grep -v "' . $me . '" | xargs kill -9');
-
-
 $command = $argv[1];
 $argument = isset($argv[2]) ? $argv[2] : NULL;
 
@@ -22,6 +18,9 @@ switch ($command) {
   case "update":
   case "download_laws":
   case "clean_jobs":
+    $me = getmypid();
+    exec('pgrep -f "crawler.php" | grep -v "' . $me . '" | xargs kill -9');
+
     require_once __DIR__ . '/includes/jobs.php';
     require_once __DIR__ . '/includes/download.php';
     require_once __DIR__ . '/includes/operations.php';
