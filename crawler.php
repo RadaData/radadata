@@ -2,37 +2,43 @@
 
 require 'includes/bootstrap.php';
 
-define('LAW_PAGE', 1);
-
-define('UNKNOWN', 0);
-define('HAS_TEXT', 1);
-define('NO_TEXT', 10);
-
-define('NOT_DOWNLOADED', 0);
-define('DOWNLOADED', 1);
 
 if (empty($argv[1])) {
   die();
 }
 
+$me = getmypid();
+exec('pgrep -f "crawler.php" | grep -v "' . $me . '" | xargs kill -9');
+
+
 $command = $argv[1];
 $argument = isset($argv[2]) ? $argv[2] : NULL;
 
 switch ($command) {
-  case "discover":
-    discover($argument);
-    break;
-  case "update":
-    update($argument);
-    break;
-  case "download_laws":
-    download_laws($argument);
-    break;
-  case "clean_jobs":
-    clean_jobs($argument);
-    break;
   case "check":
     check($argument);
+    break;
+  case "discover":
+  case "update":
+  case "download_laws":
+  case "clean_jobs":
+    require_once __DIR__ . '/includes/jobs.php';
+    require_once __DIR__ . '/includes/download.php';
+    require_once __DIR__ . '/includes/operations.php';
+    switch ($command) {
+      case "discover":
+        discover($argument);
+        break;
+      case "update":
+        update($argument);
+        break;
+      case "download_laws":
+        download_laws($argument);
+        break;
+      case "clean_jobs":
+        clean_jobs($argument);
+        break;
+    }
     break;
   case "help":
     print('Type "php crawler.php discover" to find new articles.' . "\n" .
