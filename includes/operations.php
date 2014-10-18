@@ -6,10 +6,13 @@ function download_laws($reset = FALSE) {
   if ($reset) {
     clear_jobs('download_laws');
 
+    $i = 0;
     $result = db('db')->query('SELECT id FROM urls WHERE status = ' . NOT_DOWNLOADED . ' ORDER BY id');
     foreach ($result as $row) {
       add_job('download_law', array('id' => $row['id']), 'download_laws');
+      $i++;
     }
+    _log($i . ' jobs added.');
   }
   launch_workers(20, 'download_laws', 'download_law');
 }
@@ -44,9 +47,12 @@ function update() {
   $issuers = discover_meta();
   clear_jobs('update');
 
+  $i = 0;
   foreach ($issuers as $name => $issuer) {
     add_job('update_issuer', array('issuer_url' => $issuer['url']), 'update');
+    $i++;
   }
+  _log($i . ' jobs added.');
   launch_workers(4, 'update', 'update_issuer');
 }
 
@@ -83,10 +89,13 @@ function discover($reset = FALSE) {
     $issuers = discover_meta();
     clear_jobs('discover');
 
+    $i = 0;
     foreach ($issuers as $name => $issuer) {
       add_job('discover_issuer', array('issuer_url' => $issuer['url']), 'discover');
+      $i++;
     }
     variable_set('last_discover', time());
+    _log($i . ' jobs added.');
   }
   launch_workers(1, 'discover', 'discover_issuer');
   launch_workers(1, 'discover', 'discover_law_urls');
@@ -138,9 +147,12 @@ function discover_issuer($url) {
     $first_page = getCrawler(download($url));
     $last_pager_link = $first_page->filterXPath('//*[@id="page"]/div[2]/table/tbody/tr[1]/td[3]/div/div[2]/span/a[last()]');
     $page_count = $last_pager_link->count() ? preg_replace('/(.*?)([0-9]+)$/', '$2', $last_pager_link->attr('href')) : 1;
+    $i = 0;
     for ($i = $page_count; $i >= 1; $i--) {
       add_job('discover_law_urls', array('url' => $url . ($i > 1 ? '/page' . $i : '')), 'discover');
+      $i++;
     }
+    _log($i . ' jobs added.');
   } catch (Exception $e) {
     _log($e->getMessage(), 'red');
   }
