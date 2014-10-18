@@ -185,11 +185,3 @@ function mark_discovered_url($urls) {
   $result = db('db')->exec($sql);
 }
 
-function mark_law($law, $downloaded, $has_text = UNKNOWN) {
-  db('db')->prepare("UPDATE urls SET `status` = :status, `has_text` = :has_text WHERE `id` = :id")
-    ->execute(array(
-      ':status' => $downloaded,
-      ':has_text' => $has_text,
-      ':id' => $law
-    ));
-}
