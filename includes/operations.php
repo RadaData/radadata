@@ -21,7 +21,7 @@ function download_law($id) {
   try {
     $html = download('/laws/card/' . $id, 0, '/laws/show/' . $id . '/card');
 
-    if (strpos($html, 'Текст відсутній') !== FALSE) {
+    if (strpos($html, 'Текст відсутній') !== FALSE || strpos($html, 'Текст документа') === FALSE) {
       mark_law($id, DOWNLOADED, NO_TEXT);
     }
     else {
