@@ -1,5 +1,7 @@
 <?php
 
+use Symfony\Component\DomCrawler\Crawler;
+
 define('SUCCESS', 10);
 define('FAILURE', 3);
 

@@ -26,3 +26,5 @@ $conf['aws'] = array(
   'profile' => 'default',
   'region' => 'eu-west-1'
 );
+
+$conf['use_proxy'] = 0;
