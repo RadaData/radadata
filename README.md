@@ -98,10 +98,3 @@ This command works best for the later scans, to skip the hundreds of pages with 
 ### What does it do?
 
 Removes all jobs from the queue. Usually, you should run `php crawler.php update` after this.
-
-
-
-## debug
-
-List current crawler config in readable format. It's taken from conf/conf.txt. That file contains serialized list of law
-issuers, which could be updated with 'php crawler.php update 1'.

@@ -56,7 +56,7 @@ function update($reset = false)
     clear_jobs('update');
 
     $i = 0;
-    foreach ($issuers as $name => $issuer) {
+    foreach ($issuers as $issuer) {
         add_job('update_issuer', array('issuer_url' => $issuer['url']), 'update');
         $i++;
     }
@@ -110,7 +110,7 @@ function discover($reset = false)
         clear_jobs('discover');
 
         $i = 0;
-        foreach ($issuers as $name => $issuer) {
+        foreach ($issuers as $issuer) {
             add_job('discover_issuer', array('issuer_url' => $issuer['url']), 'discover');
             $i++;
         }
@@ -123,8 +123,14 @@ function discover($reset = false)
 
 function discover_meta($reset = false)
 {
-    $issuers = variable_get('issuers');
-    if (!$issuers || $reset) {
+	$issuers = array();
+
+	$db_issuers = db('db')->query('SELECT * FROM issuers')->fetchAll();
+	foreach ($db_issuers as $issuer) {
+		$issuers[$issuers['name']] = $issuer;
+	}
+
+	if (!$issuers || $reset) {
         $group = null;
         $issuers = array();
 
@@ -143,9 +149,10 @@ function discover_meta($reset = false)
                     $issuer_link = $node->filterXPath('//td[2]/a');
                     $issuer = array();
                     $issuer['url'] = $issuer_link->attr('href');
-                    $issuer['id'] = str_replace('/laws/main/', '', $issuer['url']);
-                    $issuer['group'] = $group;
+                    $issuer['issuer_id'] = str_replace('/laws/main/', '', $issuer['url']);
+                    $issuer['group_name'] = $group;
                     $issuer['name'] = better_trim($issuer_link->text());
+					$issuer['full_name'] = null;
                     if (preg_match('|(.*?) \((.*?)\)|', $issuer['name'], $match)) {
                         if (isset($match[2])) {
                             $issuer['name'] = $match[2];
@@ -153,26 +160,21 @@ function discover_meta($reset = false)
                         }
                         $issuer['full_name'] = $match[1];
                     }
-                    if ($issuer_link->count() == 2) {
-                        $issuer['link'] = $issuer_link->last()->attr('href');
-                    }
+					$issuer['website'] = $issuer_link->count() == 2 ? $issuer_link->last()->attr('href') : null;
                     if (!isset($issuers[$issuer['name']])) {
                         $issuers[$issuer['name']] = $issuer;
                     }
                 }
             }
         );
-        variable_set('issuers', $issuers);
+		foreach ($issuers as $issuer) {
+			$sql = "INSERT IGNORE INTO issuers (issuer_id, name, full_name, group_name, website, url) VALUES (:issuer_id, :name, :full_name, :group_name, :website, :url)";
+			$q = db('db')->prepare($sql);
+			$q->execute(array(':issuer_id' => $issuer['issuer_id'], ':name' => $issuer['name'], ':full_name' => $issuer['full_name'], ':group_name' => $issuer['group_name'], ':website' => $issuer['website'], ':url' => $issuer['url']));
+		}
     }
 
     return $issuers;
-}
-
-function debug()
-{
-    require_once __DIR__ . '/json.php';
-    $issuers = discover_meta();
-    file_put_contents('conf/rada_structure.json', encodeJson($issuers));
 }
 
 function discover_issuer($url)
