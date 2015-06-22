@@ -168,7 +168,7 @@ function discover_meta($reset = false)
     return $issuers;
 }
 
-function test()
+function debug()
 {
     require_once __DIR__ . '/json.php';
     $issuers = discover_meta();

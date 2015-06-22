@@ -21,7 +21,7 @@ switch ($command) {
     case "update":
     case "download_laws":
     case "clean_jobs":
-    case "test":
+    case "debug":
         require_once __DIR__ . '/includes/jobs.php';
         require_once __DIR__ . '/includes/download.php';
         require_once __DIR__ . '/includes/operations.php';
@@ -38,8 +38,8 @@ switch ($command) {
             case "clean_jobs":
                 clean_jobs($argument);
                 break;
-            case "test":
-                test();
+            case "debug":
+				debug();
                 break;
         }
         break;
