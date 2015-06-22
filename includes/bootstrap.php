@@ -86,8 +86,8 @@ function check($fix = FALSE) {
   $without = db('db')->query('SELECT COUNT(*) FROM urls WHERE status = 1 AND has_text = 10')->fetchColumn();
   $pending = db('db')->query('SELECT COUNT(*) FROM urls WHERE status = 0')->fetchColumn();
 
-  $result = db('db')->query('SELECT id, status, has_text FROM urls  ORDER BY id');
-  $law_dir = 'downloads/zakon.rada.gov.ua/laws/show/';
+  $result = db('db')->query('SELECT law_id, status, has_text FROM urls  ORDER BY id');
+  $law_dir = __DIR__ . '/../../downloads/zakon.rada.gov.ua/laws/show/';
   function is_fake($html, $text = true) {
     return fake_content($html, array(
       'required' => array('<div id="article"', '</body>'),
@@ -103,11 +103,11 @@ function check($fix = FALSE) {
   $d_unknown_text_true_content = 0;
   $d_unknown_text_no_text = 0;
   foreach ($result as $row) {
-    $law = $row['id'];
-    $law_path = $law_dir . $law;
-    $card_path = $law_dir . $law . '/card.html';
-    $text_path = $law_dir . $law . '/text.html';
-    $page_path = $law_dir . $law . '/page.html';
+    $law_id = $row['law_id'];
+    $law_path = $law_dir . $law_id;
+    $card_path = $law_dir . $law_id . '/card.html';
+    $text_path = $law_dir . $law_id . '/text.html';
+    $page_path = $law_dir . $law_id . '/page.html';
 
     if ($row['status'] == NOT_DOWNLOADED && is_dir($law_path)) {
       $nd_orphaned_dirs++;
@@ -121,7 +121,7 @@ function check($fix = FALSE) {
       $d_no_files++;
       if ($fix) {
         remove_dir($law_path);
-        mark_law($law, NOT_DOWNLOADED);
+        mark_law($law_id, NOT_DOWNLOADED);
       }
     }
     if ($row['status'] == DOWNLOADED && $row['has_text'] == HAS_TEXT && (file_exists($text_path) || file_exists($page_path))) {
@@ -129,7 +129,7 @@ function check($fix = FALSE) {
         $d_fake_content++;
         if ($fix) {
           remove_dir($law_path);
-          mark_law($law, NOT_DOWNLOADED);
+          mark_law($law_id, NOT_DOWNLOADED);
         }
       }
     }
@@ -139,13 +139,13 @@ function check($fix = FALSE) {
         $d_fake_content++;
         if ($fix) {
           remove_dir($law_path);
-          mark_law($law, NOT_DOWNLOADED);
+          mark_law($law_id, NOT_DOWNLOADED);
         }
       }
       else {
         $d_unknown_text_true_content++;
         if ($fix) {
-          mark_law($law, DOWNLOADED, HAS_TEXT);
+          mark_law($law_id, DOWNLOADED, HAS_TEXT);
         }
       }
     }
@@ -155,19 +155,19 @@ function check($fix = FALSE) {
       if (strpos($html, 'Текст відсутній') !== FALSE) {
         $d_unknown_text_no_text++;
         if ($fix) {
-          mark_law($law, DOWNLOADED, NO_TEXT);
+          mark_law($law_id, DOWNLOADED, NO_TEXT);
         }
       }
       else {
         $d_no_files++;
         if ($fix) {
-          mark_law($law, NOT_DOWNLOADED);
+          mark_law($law_id, NOT_DOWNLOADED);
         }
       }
     }
     if ($row['status'] == DOWNLOADED && $row['has_text'] == UNKNOWN && !(file_exists($text_path) || file_exists($page_path)) && !file_exists($card_path)) {
       if ($fix) {
-        mark_law($law, NOT_DOWNLOADED);
+        mark_law($law_id, NOT_DOWNLOADED);
       }
     }
   }
@@ -186,11 +186,11 @@ function check($fix = FALSE) {
   print("\n");
 }
 
-function mark_law($law, $downloaded, $has_text = UNKNOWN) {
-  db('db')->prepare("UPDATE urls SET `status` = :status, `has_text` = :has_text WHERE `id` = :id")
+function mark_law($law_id, $downloaded, $has_text = UNKNOWN) {
+  db('db')->prepare("UPDATE urls SET `status` = :status, `has_text` = :has_text WHERE `law_id` = :law_id")
     ->execute(array(
       ':status' => $downloaded,
       ':has_text' => $has_text,
-      ':id' => $law
+      ':law_id' => $law_id
     ));
 }

@@ -7,6 +7,7 @@ define('FAILURE', 3);
 
 define('NOT_DOWNLOADED', 0);
 define('DOWNLOADED', 1);
+define('SAVED', 2);
 
 global $user_agents, $active_user_agent;
 $user_agents = array(
@@ -31,7 +32,7 @@ $website = array(
 $active_mirror = 0;
 
 global $downloads_dir;
-$downloads_dir = __DIR__ . '/../downloads';
+$downloads_dir = __DIR__ . '/../../downloads';
 
 function get_mirror() {
   global $website, $active_mirror;

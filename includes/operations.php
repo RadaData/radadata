@@ -8,9 +8,9 @@ function download_laws($reset = false)
         clear_jobs('download_laws');
 
         $i = 0;
-        $result = db('db')->query('SELECT id FROM urls WHERE status = ' . NOT_DOWNLOADED . ' ORDER BY id');
+        $result = db('db')->query('SELECT law_id FROM urls WHERE status = ' . NOT_DOWNLOADED . ' ORDER BY id');
         foreach ($result as $row) {
-            add_job('download_law', array('id' => $row['id']), 'download_laws');
+            add_job('download_law', array('id' => $row['law_id']), 'download_laws');
             $i++;
         }
         _log($i . ' jobs added.');
@@ -223,8 +223,8 @@ function url_to_lawID($url)
 
 function is_discovered_url($url)
 {
-    $result = db('db')->prepare("SELECT COUNT(*) FROM urls WHERE id = :id");
-    $result->execute(array(':id' => url_to_lawID($url)));
+    $result = db('db')->prepare("SELECT COUNT(*) FROM urls WHERE law_id = :law_id");
+    $result->execute(array(':law_id' => url_to_lawID($url)));
 
     return (bool) $result->fetchColumn();
 }
@@ -239,7 +239,7 @@ function mark_discovered_url($urls)
     foreach ($urls as $url) {
         $values[] = "('" . url_to_lawID($url) . "', '" . NOT_DOWNLOADED . "', '" . LAW_PAGE . "')";
     }
-    $sql = "INSERT IGNORE INTO urls (url, status, type) VALUES " . implode(', ', $values);
+    $sql = "INSERT IGNORE INTO urls (law_id, status, type) VALUES " . implode(', ', $values);
 
     $result = db('db')->exec($sql);
 }
