@@ -67,7 +67,7 @@ class CheckCommand extends Console\Command\Command
         $d_unknown_text_true_content = 0;
         $d_unknown_text_no_text = 0;
 
-        $i = 0;
+        $i = 1;
         foreach ($result as $row) {
             $law_id = $row['law_id'];
             $law_path = $law_dir . $law_id;
