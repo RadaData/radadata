@@ -3,13 +3,13 @@
 ## Initial deployment
 
 1. composer install
-2. php crawler.php discover
-3. php crawler.php download_laws
+2. php console.php discover
+3. php console.php download
 
 ## Update existing database with new laws
 
-1. php crawler.php update
-2. php crawler.php download_laws
+1. php console.php update
+2. php console.php download
 
 
 # Available commands
@@ -19,11 +19,11 @@
 
 ### Arguments
 
-- fix (whether or not to fix the problem (usually by removing non-existent files and marking entry for re-download))
+-f, --fix (whether or not to fix the problem (usually by removing non-existent files and marking entry for re-download))
 
 #### Example
 
-`php crawler.php check 1`
+`php console.php check -f`
 
 ### What does it do?
 
@@ -37,13 +37,14 @@
 
 ## discover
 
-### Arguments
+### Options
 
-- reset (used to reset cached list of issuers)
+-r, --reset (used to reset cached list of issuers)
+-d, --download (re-download any page if needed)
 
 #### Example
 
-`php crawler.php discover 1`
+`php console.php discover -r`
 
 ### What does it do?
 
@@ -59,13 +60,9 @@ This command works best for initial scans.
 
 ## update
 
-### Arguments
-
-- reset (used to reset cached list of issuers)
-
 #### Example
 
-`php crawler.php update 1`
+`php console.php update`
 
 ### What does it do?
 
@@ -77,11 +74,15 @@ This command works best for the later scans, to skip the hundreds of pages with 
 
 
 
-## download_laws
+## download
+
+### Options
+
+-r, --reset (reset the download jobs pool and fill it with download jobs for NOT DOWNLOADED laws.)
 
 #### Example
 
-`php crawler.php download_laws`
+`php console.php download`
 
 ### What does it do?
 
@@ -89,12 +90,15 @@ This command works best for the later scans, to skip the hundreds of pages with 
 2. Spawns 20 download_law worksers, which download particular scheduled law at a time. Each worker downloads law files and then marks the law as DONWLOADED (and HAS_TEXT if it has text).
 
 
-## clean_jobs
+
+
+
+## cleanup
 
 #### Example
 
-`php crawler.php clean_jobs`
+`php console.php cleanup`
 
 ### What does it do?
 
-Removes all jobs from the queue. Usually, you should run `php crawler.php update` after this.
+Removes all zombie jobs from the pool.

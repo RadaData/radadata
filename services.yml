@@ -1,0 +1,45 @@
+parameters:
+    downloads_dir: '../downloads'
+
+services:
+    issuers:
+        class:     \ShvetsGroup\Service\Issuers
+
+    jobs:
+        class:     \ShvetsGroup\Service\Jobs
+        arguments: [ @proxy ]
+        calls:
+          - [ setContainer, [ @service_container ] ]
+
+    downloader:
+        class:     \ShvetsGroup\Service\Downloader
+        arguments: [ '%downloads_dir%', @identity, @proxy ]
+
+    identity:
+        class:     \ShvetsGroup\Service\Identity
+
+    proxy:
+        class:     \ShvetsGroup\Service\Proxy
+
+    discover_command:
+        class:     \ShvetsGroup\Command\DiscoverCommand
+        arguments: [ @jobs, @issuers ]
+
+    update_command:
+       class:     \ShvetsGroup\Command\UpdateCommand
+       arguments: [ @jobs, @issuers ]
+
+    download_command:
+       class:     \ShvetsGroup\Command\DownloadCommand
+       arguments: [ @jobs ]
+
+    check_command:
+       class:     \ShvetsGroup\Command\CheckCommand
+       arguments: [ '%downloads_dir%', @jobs ]
+
+    cleanup_command:
+       class:     \ShvetsGroup\Command\CleanupCommand
+       arguments: [ @jobs ]
+
+
+

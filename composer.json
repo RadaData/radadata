@@ -1,20 +1,25 @@
 {
-    "require": {
-        "aws/aws-sdk-php": "2.7.0",
-        "guzzlehttp/guzzle": "~4.0",
-			  "jonnyw/php-phantomjs": "3.*",
-        "sasezaki/diggin-guzzle4-charset-subscriber": "0.1",
-        "symfony/dom-crawler": "2.6.*@dev"
-    },
-    "scripts": {
-      "post-install-cmd": [
-        "PhantomInstaller\\Installer::installPhantomJS"
-      ],
-      "post-update-cmd": [
-        "PhantomInstaller\\Installer::installPhantomJS"
-      ]
-    },
-    "config": {
-      "bin-dir": "bin"
-    }
+  "require": {
+    "aws/aws-sdk-php": "2.7.0",
+    "guzzlehttp/guzzle": "~4.0",
+    "jonnyw/php-phantomjs": "3.*",
+    "sasezaki/diggin-guzzle4-charset-subscriber": "0.1",
+    "symfony/dom-crawler": "2.6.*@dev",
+    "symfony/console": "~2.7",
+    "symfony/dependency-injection": "~2.7"
+  },
+  "scripts": {
+    "post-install-cmd": [
+      "PhantomInstaller\\Installer::installPhantomJS"
+    ],
+    "post-update-cmd": [
+      "PhantomInstaller\\Installer::installPhantomJS"
+    ]
+  },
+  "autoload": {
+    "psr-4": {"ShvetsGroup\\": "ShvetsGroup/"}
+  },
+  "config": {
+    "bin-dir": "bin"
+  }
 }
