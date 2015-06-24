@@ -55,6 +55,7 @@ class DiscoverCommand extends Console\Command\Command
             $this->meta->parse($this->re_download);
             $this->addLawListJobs();
         }
+        $this->jobs->cleanup();
         $this->jobs->launch(5, 'discover', 'discover_command', 'discoverDailyLawList');
         $this->jobs->launch(5, 'discover', 'discover_command', 'discoverDailyLawListPage');
 

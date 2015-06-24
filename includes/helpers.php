@@ -116,9 +116,9 @@ function mark_law_discovered($law_url)
 
     $values = [];
     foreach ($law_url as $url) {
-        $values[] = "('" . URL2LawId($url) . "', '" . NOT_DOWNLOADED . "', '" . LAW_PAGE . "')";
+        $values[] = "('" . URL2LawId($url) . "', '" . NOT_DOWNLOADED . "')";
     }
-    $sql = "INSERT IGNORE INTO laws (law_id, status, type) VALUES " . implode(', ', $values);
+    $sql = "REPLACE INTO laws (law_id, status) VALUES " . implode(', ', $values);
     db('db')->exec($sql);
 }
 
