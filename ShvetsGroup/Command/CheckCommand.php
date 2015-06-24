@@ -40,12 +40,14 @@ class CheckCommand extends Console\Command\Command
     {
         $fix = $input->getOption('fix');
 
-        $downloaded = db('db')->query("SELECT COUNT(*) FROM laws WHERE status = " . DOWNLOADED)->fetchColumn();
-        $without = db('db')->query("SELECT COUNT(*) FROM laws WHERE status = " . DOWNLOADED . " AND has_text = " . NO_TEXT)->fetchColumn();
+        $downloaded_card = db('db')->query("SELECT COUNT(*) FROM laws WHERE status = " . DOWNLOADED_CARD)->fetchColumn();
+        $downloaded_text = db('db')->query("SELECT COUNT(*) FROM laws WHERE status = " . DOWNLOADED_REVISIONS)->fetchColumn();
+        $downloaded_relations = db('db')->query("SELECT COUNT(*) FROM laws WHERE status = " . DOWNLOADED_RELATIONS)->fetchColumn();
+        $without_text = db('db')->query("SELECT COUNT(*) FROM laws WHERE status > " . NOT_DOWNLOADED . " AND has_text = " . NO_TEXT)->fetchColumn();
         $not_downloaded = db('db')->query("SELECT COUNT(*) FROM laws WHERE status = " . NOT_DOWNLOADED)->fetchColumn();
 
-        $result_count = db('db')->query('SELECT COUNT(*) FROM laws WHERE status IN (' . NOT_DOWNLOADED . ', ' . DOWNLOADED . ')')->fetchColumn();
-        $result = db('db')->query('SELECT law_id, status, has_text FROM laws WHERE status IN (' . NOT_DOWNLOADED . ', ' . DOWNLOADED . ') ORDER BY law_id');
+        $result_count = db('db')->query('SELECT COUNT(*) FROM laws WHERE status < ' . SAVED)->fetchColumn();
+        $result = db('db')->query('SELECT law_id, status, has_text FROM laws WHERE status < ' . SAVED . ' ORDER BY law_id');
         $law_dir = $this->downloadsDir . '/zakon.rada.gov.ua/laws/show/';
 
         function is_fake($html, $is_text = true)
@@ -83,14 +85,14 @@ class CheckCommand extends Console\Command\Command
                 continue;
             }
 
-            if ($row['status'] == DOWNLOADED && $row['has_text'] == HAS_TEXT && !file_exists($text_path) && !file_exists($page_path)) {
+            if ($row['status'] > NOT_DOWNLOADED && $row['has_text'] == HAS_TEXT && !file_exists($text_path) && !file_exists($page_path)) {
                 $d_no_files++;
                 if ($fix) {
                     remove_dir($law_path);
                     mark_law($law_id, NOT_DOWNLOADED);
                 }
             }
-            if ($row['status'] == DOWNLOADED && $row['has_text'] == HAS_TEXT && (file_exists($text_path) || file_exists($page_path))) {
+            if ($row['status'] > NOT_DOWNLOADED && $row['has_text'] == HAS_TEXT && (file_exists($text_path) || file_exists($page_path))) {
                 if ((file_exists($text_path) && is_fake(file_get_contents($text_path), 1)) || (file_exists($page_path) && is_fake(file_get_contents($page_path), 0))) {
                     $d_fake_content++;
                     if ($fix) {
@@ -100,27 +102,22 @@ class CheckCommand extends Console\Command\Command
                 }
             }
 
-            if ($row['status'] == DOWNLOADED && $row['has_text'] == UNKNOWN && (file_exists($text_path) || file_exists($page_path))) {
+            if ($row['status'] > NOT_DOWNLOADED && $row['has_text'] == UNKNOWN && (file_exists($text_path) || file_exists($page_path))) {
                 if ((file_exists($text_path) && is_fake(file_get_contents($text_path), 1)) || (file_exists($page_path) && is_fake(file_get_contents($page_path), 0))) {
                     $d_fake_content++;
                     if ($fix) {
                         remove_dir($law_path);
                         mark_law($law_id, NOT_DOWNLOADED);
                     }
-                } else {
-                    $d_unknown_text_true_content++;
-                    if ($fix) {
-                        mark_law($law_id, DOWNLOADED, HAS_TEXT);
-                    }
                 }
             }
 
-            if ($row['status'] == DOWNLOADED && $row['has_text'] == UNKNOWN && !(file_exists($text_path) || file_exists($page_path)) && file_exists($card_path)) {
+            if ($row['status'] > NOT_DOWNLOADED && $row['has_text'] == UNKNOWN && !(file_exists($text_path) || file_exists($page_path)) && file_exists($card_path)) {
                 $html = file_get_contents($card_path);
                 if (strpos($html, 'Текст відсутній') !== false) {
                     $d_unknown_text_no_text++;
                     if ($fix) {
-                        mark_law($law_id, DOWNLOADED, NO_TEXT);
+                        mark_law($law_id, DOWNLOADED_CARD, NO_TEXT);
                     }
                 } else {
                     $d_no_files++;
@@ -129,7 +126,7 @@ class CheckCommand extends Console\Command\Command
                     }
                 }
             }
-            if ($row['status'] == DOWNLOADED && $row['has_text'] == UNKNOWN && !(file_exists($text_path) || file_exists($page_path)) && !file_exists($card_path)) {
+            if ($row['status'] > NOT_DOWNLOADED && $row['has_text'] == UNKNOWN && !(file_exists($text_path) || file_exists($page_path)) && !file_exists($card_path)) {
                 if ($fix) {
                     mark_law($law_id, NOT_DOWNLOADED);
                 }
@@ -138,7 +135,9 @@ class CheckCommand extends Console\Command\Command
             $i++;
         }
 
-        print("\n" . 'Downloaded     : ' . $downloaded . ' (without text: ' . $without . ')');
+        print("\n" . 'Downloaded card      : ' . $downloaded_card);
+        print("\n" . 'Downloaded text      : ' . $downloaded_text . ' (without text: ' . $without_text . ')');
+        print("\n" . 'Downloaded relations : ' . $downloaded_relations);
         print("\n" . 'Not downloaded : ' . $not_downloaded);
         print("\n" . '-------------------------------------------------');
         print("\n" . 'Junk directories           : ' . $nd_orphaned_dirs);

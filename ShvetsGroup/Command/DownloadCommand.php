@@ -41,17 +41,18 @@ class DownloadCommand extends Console\Command\Command
         $this->reset = $input->getOption('reset');
 
         if ($this->reset) {
-            clear_jobs('download');
+            $this->jobs->deleteAll('download');
 
             $i = 0;
-            $result = db('db')->query('SELECT law_id FROM laws WHERE status = ' . NOT_DOWNLOADED . ' ORDER BY id');
+            $result = db('db')->query('SELECT law_id FROM laws WHERE status = ' . NOT_DOWNLOADED . ' ORDER BY law_id');
             foreach ($result as $row) {
                 $this->jobs->add('download_command', 'downloadLaw', ['id' => $row['law_id']], 'download');
                 $i++;
             }
             _log($i . ' jobs added.');
         }
-        launch_workers(20, 'download');
+        $this->jobs->cleanup();
+        $this->jobs->launch(20, 'download');
 
         return true;
     }

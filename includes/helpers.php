@@ -13,8 +13,10 @@ define('SUCCESS', 10);
 define('FAILURE', 3);
 
 define('NOT_DOWNLOADED', 0);
-define('DOWNLOADED', 1);
-define('SAVED', 2);
+define('DOWNLOADED_CARD', 5);
+define('DOWNLOADED_REVISIONS', 10);
+define('DOWNLOADED_RELATIONS', 15);
+define('SAVED', 100);
 
 
 require_once __DIR__ . '/database.php';
