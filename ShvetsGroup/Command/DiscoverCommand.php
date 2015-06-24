@@ -90,7 +90,7 @@ class DiscoverCommand extends Console\Command\Command
             $last_pager_link = $first_page->filterXPath('//*[@id="page"]/div[2]/table/tbody/tr[1]/td[3]/div/div[2]/span/a[last()]');
             $page_count = $last_pager_link->count() ? preg_replace('/(.*?)([0-9]+)$/', '$2', $last_pager_link->attr('href')) : 1;
             for ($i = 1; $i <= $page_count; $i++) {
-                $this->jobs->add('discover_command', 'discoverDailyLawListPage', ['law_list_url' => $law_list_url . ($i > 1 ? '/page' . $i : ''), $i], 'discover');
+                $this->jobs->add('discover_command', 'discoverDailyLawListPage', ['law_list_url' => $law_list_url . ($i > 1 ? $i : ''), $i], 'discover');
             }
         } catch (Exception $e) {
             _log($e->getMessage(), 'red');
