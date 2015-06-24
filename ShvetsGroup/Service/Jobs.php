@@ -85,9 +85,15 @@ class Jobs extends ContainerAware
         $db->beginTransaction();
         $sql = "SELECT * FROM jobs WHERE claimed IS NULL" . ($group ? " AND `group` = :group" : '') . ($service ? " AND `service` = :service" : '') . ($method ? " AND `method` = :method" : '') . " ORDER BY id LIMIT 1 FOR UPDATE";
         $query = $db->prepare($sql);
-        $query->bindParam(':group', $group);
-        $query->bindParam(':service', $service);
-        $query->bindParam(':method', $method);
+        if ($group) {
+            $query->bindParam(':group', $group);
+        }
+        if ($service) {
+            $query->bindParam(':service', $service);
+        }
+        if ($method) {
+            $query->bindParam(':method', $method);
+        }
         $query->execute();
         $row = $query->fetch();
         $db->prepare("UPDATE jobs SET claimed = :claimed WHERE id = :id;")->execute([
