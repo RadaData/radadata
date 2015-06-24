@@ -13,15 +13,15 @@ class UpdateCommand extends Console\Command\Command
     private $jobs;
 
     /**
-     * @var \ShvetsGroup\Service\Issuers
+     * @var \ShvetsGroup\Service\Meta
      */
-    private $issuers;
+    private $meta;
 
     /**
-     * @param \ShvetsGroup\Service\Jobs    $jobs
-     * @param \ShvetsGroup\Service\Issuers $issuers
+     * @param \ShvetsGroup\Service\Jobs $jobs
+     * @param \ShvetsGroup\Service\Meta $meta
      */
-    public function __construct($jobs, $issuers)
+    public function __construct($jobs, $meta)
     {
         parent::__construct('update');
 
@@ -29,7 +29,7 @@ class UpdateCommand extends Console\Command\Command
         $this->setHelp('The great difference between "discover" and "update" is that "update" scans law listing from the very recent and stops when it finds a discovered law.');
 
         $this->jobs = $jobs;
-        $this->issuers = $issuers;
+        $this->meta = $meta;
     }
 
     /**
@@ -57,7 +57,7 @@ class UpdateCommand extends Console\Command\Command
         $this->jobs->deleteAll('update');
 
         $i = 0;
-        foreach ($this->issuers->getIssuers() as $issuer) {
+        foreach ($this->meta->getIssuers() as $issuer) {
             $this->jobs->add('update_command', 'updateIssuer', ['issuer_url' => $issuer['url']], 'update');
             $i++;
         }

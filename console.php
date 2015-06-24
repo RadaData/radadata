@@ -24,5 +24,6 @@ $application->add($container->get('update_command'));
 $application->add($container->get('download_command'));
 $application->add($container->get('check_command'));
 $application->add($container->get('cleanup_command'));
+$application->add($container->get('dump_command'));
 
 $application->run();

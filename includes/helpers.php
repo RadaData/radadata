@@ -97,7 +97,7 @@ function better_trim($text) {
  */
 function is_law_discovered($law_url)
 {
-    $result = db('db')->prepare("SELECT COUNT(*) FROM urls WHERE law_id = :law_id");
+    $result = db('db')->prepare("SELECT COUNT(*) FROM laws WHERE law_id = :law_id");
     $result->execute([':law_id' => URL2LawId($law_url)]);
 
     return (bool) $result->fetchColumn();
@@ -118,12 +118,12 @@ function mark_law_discovered($law_url)
     foreach ($law_url as $url) {
         $values[] = "('" . URL2LawId($url) . "', '" . NOT_DOWNLOADED . "', '" . LAW_PAGE . "')";
     }
-    $sql = "INSERT IGNORE INTO urls (law_id, status, type) VALUES " . implode(', ', $values);
+    $sql = "INSERT IGNORE INTO laws (law_id, status, type) VALUES " . implode(', ', $values);
     db('db')->exec($sql);
 }
 
 function mark_law($law_id, $downloaded, $has_text = UNKNOWN) {
-	db('db')->prepare("UPDATE urls SET `status` = :status, `has_text` = :has_text WHERE `law_id` = :law_id")
+	db('db')->prepare("UPDATE laws SET status = :status, has_text = :has_text WHERE law_id = :law_id")
 		->execute([
 			':status' => $downloaded,
 			':has_text' => $has_text,

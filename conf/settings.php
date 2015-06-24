@@ -27,4 +27,4 @@ $conf['aws'] = array(
   'region' => 'eu-west-1'
 );
 
-$conf['use_proxy'] = 0;
+$conf['use_proxy'] = 1;

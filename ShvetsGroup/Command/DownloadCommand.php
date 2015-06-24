@@ -44,7 +44,7 @@ class DownloadCommand extends Console\Command\Command
             clear_jobs('download');
 
             $i = 0;
-            $result = db('db')->query('SELECT law_id FROM urls WHERE status = ' . NOT_DOWNLOADED . ' ORDER BY id');
+            $result = db('db')->query('SELECT law_id FROM laws WHERE status = ' . NOT_DOWNLOADED . ' ORDER BY id');
             foreach ($result as $row) {
                 $this->jobs->add('download_command', 'downloadLaw', ['id' => $row['law_id']], 'download');
                 $i++;

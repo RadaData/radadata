@@ -40,12 +40,12 @@ class CheckCommand extends Console\Command\Command
     {
         $fix = $input->getOption('fix');
 
-        $downloaded = db('db')->query("SELECT COUNT(*) FROM urls WHERE status = " . DOWNLOADED)->fetchColumn();
-        $without = db('db')->query("SELECT COUNT(*) FROM urls WHERE status = " . DOWNLOADED . " AND has_text = " . NO_TEXT)->fetchColumn();
-        $pending = db('db')->query("SELECT COUNT(*) FROM urls WHERE status = " . NOT_DOWNLOADED)->fetchColumn();
+        $downloaded = db('db')->query("SELECT COUNT(*) FROM laws WHERE status = " . DOWNLOADED)->fetchColumn();
+        $without = db('db')->query("SELECT COUNT(*) FROM laws WHERE status = " . DOWNLOADED . " AND has_text = " . NO_TEXT)->fetchColumn();
+        $not_downloaded = db('db')->query("SELECT COUNT(*) FROM laws WHERE status = " . NOT_DOWNLOADED)->fetchColumn();
 
-        $result_count = db('db')->query('SELECT COUNT(*) FROM urls')->fetchColumn();
-        $result = db('db')->query('SELECT law_id, status, has_text FROM urls ORDER BY law_id');
+        $result_count = db('db')->query('SELECT COUNT(*) FROM laws WHERE status IN (' . NOT_DOWNLOADED . ', ' . DOWNLOADED . ')')->fetchColumn();
+        $result = db('db')->query('SELECT law_id, status, has_text FROM laws WHERE status IN (' . NOT_DOWNLOADED . ', ' . DOWNLOADED . ') ORDER BY law_id');
         $law_dir = $this->downloadsDir . '/zakon.rada.gov.ua/laws/show/';
 
         function is_fake($html, $is_text = true)
@@ -138,8 +138,8 @@ class CheckCommand extends Console\Command\Command
             $i++;
         }
 
-        print("\n" . 'Downloaded : ' . $downloaded . ' (without text: ' . $without . ')');
-        print("\n" . 'Pending    : ' . $pending);
+        print("\n" . 'Downloaded     : ' . $downloaded . ' (without text: ' . $without . ')');
+        print("\n" . 'Not downloaded : ' . $not_downloaded);
         print("\n" . '-------------------------------------------------');
         print("\n" . 'Junk directories           : ' . $nd_orphaned_dirs);
         print("\n" . 'Missing files for downloads: ' . $d_no_files);

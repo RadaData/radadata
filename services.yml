@@ -2,8 +2,8 @@ parameters:
     downloads_dir: '../downloads'
 
 services:
-    issuers:
-        class:     \ShvetsGroup\Service\Issuers
+    meta:
+        class:     \ShvetsGroup\Service\Meta
 
     jobs:
         class:     \ShvetsGroup\Service\Jobs
@@ -23,11 +23,11 @@ services:
 
     discover_command:
         class:     \ShvetsGroup\Command\DiscoverCommand
-        arguments: [ @jobs, @issuers ]
+        arguments: [ @jobs, @meta ]
 
     update_command:
        class:     \ShvetsGroup\Command\UpdateCommand
-       arguments: [ @jobs, @issuers ]
+       arguments: [ @jobs, @meta ]
 
     download_command:
        class:     \ShvetsGroup\Command\DownloadCommand
@@ -35,6 +35,10 @@ services:
 
     check_command:
        class:     \ShvetsGroup\Command\CheckCommand
+       arguments: [ '%downloads_dir%', @jobs ]
+
+    dump_command:
+       class:     \ShvetsGroup\Command\DumpCommand
        arguments: [ '%downloads_dir%', @jobs ]
 
     cleanup_command:

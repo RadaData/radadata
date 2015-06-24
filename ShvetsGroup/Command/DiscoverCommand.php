@@ -13,18 +13,18 @@ class DiscoverCommand extends Console\Command\Command
     private $jobs;
 
     /**
-     * @var \ShvetsGroup\Service\Issuers
+     * @var \ShvetsGroup\Service\Meta
      */
-    private $issuers;
+    private $meta;
 
     private $reset = false;
     private $re_download = false;
 
     /**
-     * @param      \ShvetsGroup\Service\Jobs    $jobs
-     * @param      \ShvetsGroup\Service\Issuers $issuers
+     * @param \ShvetsGroup\Service\Jobs $jobs
+     * @param \ShvetsGroup\Service\Meta $meta
      */
-    public function __construct($jobs, $issuers)
+    public function __construct($jobs, $meta)
     {
         parent::__construct('discover');
 
@@ -34,7 +34,7 @@ class DiscoverCommand extends Console\Command\Command
         $this->addOption('download', 'd', Console\Input\InputOption::VALUE_NONE, 'Re-download any page from the live website.');
 
         $this->jobs = $jobs;
-        $this->issuers = $issuers;
+        $this->meta = $meta;
     }
 
     /**
@@ -51,70 +51,49 @@ class DiscoverCommand extends Console\Command\Command
         $this->reset = $input->getOption('reset');
         $this->re_download = $input->getOption('download');
 
-        if ($this->issuers->isEmpty() || $this->reset) {
-            $this->discoverMeta();
-            $this->addDiscoverIssuersJobs();
+        if ($this->meta->isEmpty() || $this->reset) {
+            $this->meta->parse($this->re_download);
+            $this->addLawListJobs();
         }
-        $this->jobs->launch(1, 'discover', 'discover_command', 'discoverIssuer');
-        $this->jobs->launch(1, 'discover', 'discover_command', 'discoverLawList');
+        $this->jobs->launch(5, 'discover', 'discover_command', 'discoverDailyLawList');
+        $this->jobs->launch(5, 'discover', 'discover_command', 'discoverDailyLawListPage');
 
         return true;
     }
 
     /**
-     * Fill the law issuers list.
+     * Schedule crawls of each law list pages.
      */
-    protected function discoverMeta()
-    {
-        $this->issuers->parse(download('/laws/stru/a', $this->re_download));
-    }
-
-    /**
-     * Schedule crawls of each issuer pages.
-     */
-    protected function addDiscoverIssuersJobs()
+    protected function addLawListJobs()
     {
         $this->jobs->deleteAll('discover');
 
-        $i = 0;
-        foreach ($this->issuers->getIssuers() as $issuer) {
-            $this->jobs->add('discover_command', 'discoverIssuer', ['issuer_url' => $issuer['url']], 'discover');
-            $i++;
+        $this->jobs->add('discover_command', 'discoverDailyLawList', ['law_list_url' => '/laws/main/ay1990/page'], 'discover');
+
+        $date = mktime(0, 0, 0, 1, 1, 1991);
+        while ($date < strtotime('midnight')) {
+            $this->jobs->add('discover_command', 'discoverDailyLawList', ['law_list_url' => '/laws/main/a' . date('Ymd', $date) . '/sp5/page'], 'discover');
+            $date = strtotime(date('c', $date) . '+1 day');
         }
-        _log($i . ' jobs added.');
     }
 
     /**
-     * Crawl the issuer page. Take the number of law list pages from it and schedule crawls for each of them.
+     * Crawl the daily law list page. Take the number of law list pages from it and schedule crawls for each of them.
      *
-     * @param $issuer_url
+     * @param string $law_list_url
      */
-    public function discoverIssuer($issuer_url)
+    public function discoverDailyLawList($law_list_url)
     {
         try {
-            $first_page = crawler(download($issuer_url, $this->re_download));
+            $first_page = crawler(download($law_list_url, $this->re_download));
             $last_pager_link = $first_page->filterXPath('//*[@id="page"]/div[2]/table/tbody/tr[1]/td[3]/div/div[2]/span/a[last()]');
             $page_count = $last_pager_link->count() ? preg_replace('/(.*?)([0-9]+)$/', '$2', $last_pager_link->attr('href')) : 1;
-            $this->addDiscoverLawListJobs($issuer_url, $page_count);
+            for ($i = 1; $i <= $page_count; $i++) {
+                $this->jobs->add('discover_command', 'discoverDailyLawListPage', ['law_list_url' => $law_list_url . ($i > 1 ? '/page' . $i : ''), $i], 'discover');
+            }
         } catch (Exception $e) {
             _log($e->getMessage(), 'red');
         }
-    }
-
-    /**
-     * Schedule crawls of law list pages.
-     *
-     * @param $issuer_url
-     * @param $page_count
-     */
-    protected function addDiscoverLawListJobs($issuer_url, $page_count)
-    {
-        $i = 0;
-        for ($j = $page_count; $j >= 1; $j--) {
-            $this->jobs->add('discover_command', 'discoverLawList', ['law_list_url' => $issuer_url . ($j > 1 ? '/page' . $j : '')], 'discover');
-            $i++;
-        }
-        _log($i . ' jobs added.');
     }
 
     /**
@@ -122,10 +101,10 @@ class DiscoverCommand extends Console\Command\Command
      *
      * @param string $law_list_url Law list URL.
      */
-    public function discoverLawList($law_list_url)
+    public function discoverDailyLawListPage($law_list_url, $page_num)
     {
         try {
-            $list_page = crawler(download($law_list_url, $this->re_download));
+            $list_page = crawler(download($law_list_url, $page_num > 1 ? $this->re_download : false));
 
             $urls = [];
             $list_page->filterXPath('//*[@id="page"]/div[2]/table/tbody/tr[1]/td[3]/div/dl/dd/ol/li/a')
