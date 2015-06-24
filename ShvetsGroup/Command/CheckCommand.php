@@ -112,7 +112,7 @@ class CheckCommand extends Console\Command\Command
                 }
             }
 
-            if ($row['status'] > NOT_DOWNLOADED && $row['has_text'] == UNKNOWN && !(file_exists($text_path) || file_exists($page_path)) && file_exists($card_path)) {
+            if ($row['status'] >= DOWNLOADED_REVISIONS && $row['has_text'] == UNKNOWN && !(file_exists($text_path) || file_exists($page_path)) && file_exists($card_path)) {
                 $html = file_get_contents($card_path);
                 if (strpos($html, 'Текст відсутній') !== false) {
                     $d_unknown_text_no_text++;
