@@ -13,6 +13,7 @@ class DownloadCommand extends Console\Command\Command
     private $jobs;
 
     private $reset = false;
+    private $re_download = false;
 
     /**
      * @param \ShvetsGroup\Service\Jobs $jobs
@@ -23,6 +24,7 @@ class DownloadCommand extends Console\Command\Command
 
         $this->setDescription('Download laws scheduled for download.');
         $this->addOption('reset', 'r', Console\Input\InputOption::VALUE_NONE, 'Reset the download jobs pool and fill it with download jobs for NOT DOWNLOADED laws.');
+        $this->addOption('download', 'd', Console\Input\InputOption::VALUE_NONE, 'Re-download any page from the live website.');
 
         $this->jobs = $jobs;
     }
@@ -39,6 +41,7 @@ class DownloadCommand extends Console\Command\Command
     protected function execute(Console\Input\InputInterface $input, Console\Output\OutputInterface $output)
     {
         $this->reset = $input->getOption('reset');
+        $this->re_download = $input->getOption('download');
 
         if ($this->reset) {
             $this->jobs->deleteAll('download');
@@ -65,7 +68,7 @@ class DownloadCommand extends Console\Command\Command
     function downloadLaw($law_id)
     {
         try {
-            $html = download('/laws/card/' . $law_id, false, '/laws/show/' . $law_id . '/card');
+            $html = download('/laws/card/' . $law_id, $this->re_download, '/laws/show/' . $law_id . '/card');
 
             mark_law($law_id, DOWNLOADED_CARD);
 
