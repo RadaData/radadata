@@ -85,14 +85,14 @@ class CheckCommand extends Console\Command\Command
                 continue;
             }
 
-            if ($row['status'] > NOT_DOWNLOADED && $row['has_text'] == HAS_TEXT && !file_exists($text_path) && !file_exists($page_path)) {
+            if ($row['status'] >= DOWNLOADED_REVISIONS && $row['has_text'] == HAS_TEXT && !file_exists($text_path) && !file_exists($page_path)) {
                 $d_no_files++;
                 if ($fix) {
                     remove_dir($law_path);
                     mark_law($law_id, NOT_DOWNLOADED);
                 }
             }
-            if ($row['status'] > NOT_DOWNLOADED && $row['has_text'] == HAS_TEXT && (file_exists($text_path) || file_exists($page_path))) {
+            if ($row['status'] >= DOWNLOADED_REVISIONS && $row['has_text'] == HAS_TEXT && (file_exists($text_path) || file_exists($page_path))) {
                 if ((file_exists($text_path) && is_fake(file_get_contents($text_path), 1)) || (file_exists($page_path) && is_fake(file_get_contents($page_path), 0))) {
                     $d_fake_content++;
                     if ($fix) {
