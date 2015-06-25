@@ -55,7 +55,7 @@ class DownloadCommand extends Console\Command\Command
             _log($i . ' jobs added.');
         }
         $this->jobs->cleanup();
-        $this->jobs->launch(20, 'download');
+        $this->jobs->launch(50, 'download');
 
         return true;
     }
