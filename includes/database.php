@@ -1,6 +1,6 @@
 <?php
 
-use Illuminate\Database\Capsule\Manager as Capsule;
+use Illuminate\Database\Capsule\Manager as DB;
 
 /**
  * @return PDO
@@ -33,8 +33,7 @@ function close_db($database = 'db')
     }
 }
 
-
-$capsule = new Capsule;
+$capsule = new DB;
 $capsule->addConnection(array(
     'driver'    => 'mysql',
     'host'      => 'localhost',
@@ -45,4 +44,5 @@ $capsule->addConnection(array(
     'collation' => 'utf8_unicode_ci',
     'prefix'    => ''
 ));
+$capsule->setAsGlobal();
 $capsule->bootEloquent();
