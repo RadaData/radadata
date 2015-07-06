@@ -18,12 +18,13 @@ $container = new ContainerBuilder();
 $loader = new YamlFileLoader($container, new FileLocator(__DIR__));
 $loader->load('services.yml');
 
-$application = new Console\Application('Demo', '1.0.0');
+$application = new Console\Application('RadaDownloader', '1.0.0');
+$application->add($container->get('status_command'));
 $application->add($container->get('discover_command'));
-$application->add($container->get('update_command'));
 $application->add($container->get('download_command'));
 $application->add($container->get('check_command'));
 $application->add($container->get('cleanup_command'));
 $application->add($container->get('dump_command'));
+$application->add($container->get('cron_command'));
 
 $application->run();

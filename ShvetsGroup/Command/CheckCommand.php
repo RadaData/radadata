@@ -2,6 +2,7 @@
 
 namespace ShvetsGroup\Command;
 
+use ShvetsGroup\Model\Law;
 use Symfony\Component\Console as Console;
 
 class CheckCommand extends Console\Command\Command
@@ -20,7 +21,7 @@ class CheckCommand extends Console\Command\Command
     {
         parent::__construct('check');
 
-        $this->setDescription('Cleanup jobs pool.');
+        $this->setDescription('Check the downloaded files for issues.');
         $this->addOption('fix', 'f', Console\Input\InputOption::VALUE_NONE, 'Try to fix all problems.');
 
         $this->downloadsDir = BASE_PATH . $downloadsDir;
@@ -40,14 +41,17 @@ class CheckCommand extends Console\Command\Command
     {
         $fix = $input->getOption('fix');
 
-        $downloaded_card = db('db')->query("SELECT COUNT(*) FROM laws WHERE status = " . DOWNLOADED_CARD)->fetchColumn();
-        $downloaded_text = db('db')->query("SELECT COUNT(*) FROM laws WHERE status = " . DOWNLOADED_REVISIONS)->fetchColumn();
-        $downloaded_relations = db('db')->query("SELECT COUNT(*) FROM laws WHERE status = " . DOWNLOADED_RELATIONS)->fetchColumn();
-        $without_text = db('db')->query("SELECT COUNT(*) FROM laws WHERE status > " . NOT_DOWNLOADED . " AND has_text = " . NO_TEXT)->fetchColumn();
-        $not_downloaded = db('db')->query("SELECT COUNT(*) FROM laws WHERE status = " . NOT_DOWNLOADED)->fetchColumn();
+        $downloaded_card = Law::where('status', Law::DOWNLOADED_CARD)->count();
+        $downloaded_text = Law::where('status', Law::DOWNLOADED_REVISIONS)->count();
+        $downloaded_relations = Law::where('status', Law::DOWNLOADED_RELATIONS)->count();
+        $without_text = Law::where('status', '>', Law::NOT_DOWNLOADED)->where('has_text', Law::NO_TEXT)->count();
+        $not_downloaded = Law::where('status', Law::NOT_DOWNLOADED)->count();
 
-        $result_count = db('db')->query('SELECT COUNT(*) FROM laws WHERE status < ' . SAVED)->fetchColumn();
-        $result = db('db')->query('SELECT law_id, status, has_text FROM laws WHERE status < ' . SAVED . ' ORDER BY law_id');
+        $result_count = Law::where('status', '<', Law::SAVED)->count();
+
+        // TODO: CHUNKS
+        $result = Law::where('status', '<', Law::SAVED)->orderBy('law_id')->get();
+
         $law_dir = $this->downloadsDir . '/zakon.rada.gov.ua/laws/show/';
 
         function is_fake($html, $is_text = true)
@@ -70,14 +74,14 @@ class CheckCommand extends Console\Command\Command
         $d_unknown_text_no_text = 0;
 
         $i = 1;
-        foreach ($result as $row) {
-            $law_id = $row['law_id'];
+        foreach ($result as $law) {
+            $law_id = $law->law_id;
             $law_path = $law_dir . $law_id;
             $card_path = $law_dir . $law_id . '/card.html';
             $text_path = $law_dir . $law_id . '/text.html';
             $page_path = $law_dir . $law_id . '/page.html';
 
-            if ($row['status'] == NOT_DOWNLOADED && is_dir($law_path)) {
+            if ($law->status == Law::NOT_DOWNLOADED && is_dir($law_path)) {
                 $nd_orphaned_dirs++;
                 if ($fix) {
                     remove_dir($law_path);
@@ -85,50 +89,50 @@ class CheckCommand extends Console\Command\Command
                 continue;
             }
 
-            if ($row['status'] >= DOWNLOADED_REVISIONS && $row['has_text'] == HAS_TEXT && !file_exists($text_path) && !file_exists($page_path)) {
+            if ($law->status >= Law::DOWNLOADED_REVISIONS && $law->has_text == Law::HAS_TEXT && !file_exists($text_path) && !file_exists($page_path)) {
                 $d_no_files++;
                 if ($fix) {
                     remove_dir($law_path);
-                    mark_law($law_id, NOT_DOWNLOADED);
+                    Law::find($law_id)->update(['status' => Law::NOT_DOWNLOADED]);
                 }
             }
-            if ($row['status'] >= DOWNLOADED_REVISIONS && $row['has_text'] == HAS_TEXT && (file_exists($text_path) || file_exists($page_path))) {
+            if ($law->status >= Law::DOWNLOADED_REVISIONS && $law->has_text == Law::HAS_TEXT && (file_exists($text_path) || file_exists($page_path))) {
                 if ((file_exists($text_path) && is_fake(file_get_contents($text_path), 1)) || (file_exists($page_path) && is_fake(file_get_contents($page_path), 0))) {
                     $d_fake_content++;
                     if ($fix) {
                         remove_dir($law_path);
-                        mark_law($law_id, NOT_DOWNLOADED);
+                        Law::find($law_id)->update(['status' => Law::NOT_DOWNLOADED]);
                     }
                 }
             }
 
-            if ($row['status'] > NOT_DOWNLOADED && $row['has_text'] == UNKNOWN && (file_exists($text_path) || file_exists($page_path))) {
+            if ($law->status > Law::NOT_DOWNLOADED && $law->has_text == Law::UNKNOWN && (file_exists($text_path) || file_exists($page_path))) {
                 if ((file_exists($text_path) && is_fake(file_get_contents($text_path), 1)) || (file_exists($page_path) && is_fake(file_get_contents($page_path), 0))) {
                     $d_fake_content++;
                     if ($fix) {
                         remove_dir($law_path);
-                        mark_law($law_id, NOT_DOWNLOADED);
+                        Law::find($law_id)->update(['status' => Law::NOT_DOWNLOADED]);
                     }
                 }
             }
 
-            if ($row['status'] >= DOWNLOADED_REVISIONS && $row['has_text'] == UNKNOWN && !(file_exists($text_path) || file_exists($page_path)) && file_exists($card_path)) {
+            if ($law->status >= Law::DOWNLOADED_REVISIONS && $law->has_text == Law::UNKNOWN && !(file_exists($text_path) || file_exists($page_path)) && file_exists($card_path)) {
                 $html = file_get_contents($card_path);
                 if (strpos($html, 'Текст відсутній') !== false) {
                     $d_unknown_text_no_text++;
                     if ($fix) {
-                        mark_law($law_id, DOWNLOADED_CARD, NO_TEXT);
+                        Law::find($law_id)->update(['status' => Law::DOWNLOADED_CARD, 'has_text' => Law::NO_TEXT]);
                     }
                 } else {
                     $d_no_files++;
                     if ($fix) {
-                        mark_law($law_id, NOT_DOWNLOADED);
+                        Law::find($law_id)->update(['status' => Law::NOT_DOWNLOADED]);
                     }
                 }
             }
-            if ($row['status'] > NOT_DOWNLOADED && $row['has_text'] == UNKNOWN && !(file_exists($text_path) || file_exists($page_path)) && !file_exists($card_path)) {
+            if ($law->status > Law::NOT_DOWNLOADED && $law->has_text == Law::UNKNOWN && !(file_exists($text_path) || file_exists($page_path)) && !file_exists($card_path)) {
                 if ($fix) {
-                    mark_law($law_id, NOT_DOWNLOADED);
+                    Law::find($law_id)->update(['status' => Law::NOT_DOWNLOADED]);
                 }
             }
             print("\rChecked " . $i . ' of ' . $result_count . ' (' . floor($i / $result_count * 100) . '%)');

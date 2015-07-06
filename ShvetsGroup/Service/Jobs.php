@@ -31,10 +31,12 @@ class Jobs extends ContainerAware
      *
      * @throws \Exception
      */
-    public function launch($workers_count, $group, $service = null, $method = null)
+    public function launch($workers_count, $group = null, $service = null, $method = null, $wait_if_no_jobs = false)
     {
+        $this->cleanup();
+
         $real_workers_count = min($workers_count, $this->proxy->count());
-        _log('Launching ' . $real_workers_count . ' workers for "' . $group . '/' . ($service ? $service . '->' : '') . $method . '" operations.', 'title');
+        _log('Launching ' . $real_workers_count . ' workers for "' . ($group ? ($group . '/') : '' ). ($service ? $service . '->' : '') . $method . '" operations.', 'title');
 
         if ($real_workers_count == 1) {
             while ($job = $this->fetch($group, $service, $method)) {
@@ -42,7 +44,18 @@ class Jobs extends ContainerAware
             }
         } else {
             $child = 0;
-            while ($job = $this->fetch($group, $service, $method)) {
+            while (true) {
+                $job = $this->fetch($group, $service, $method);
+
+                if (!$job) {
+                    if ($wait_if_no_jobs) {
+                        sleep(1000);
+                        continue;
+                    } else {
+                        return;
+                    }
+                }
+
                 $child++;
                 close_db('db');
                 close_db('misc');
@@ -67,6 +80,14 @@ class Jobs extends ContainerAware
                 }
             }
         }
+    }
+
+    /**
+     * Alias to 'launch', which waits by default if there are no jobs.
+     */
+    public function launchAndWait($workers_count, $group = null, $service = null, $method = null)
+    {
+        $this->launch($workers_count, $group, $service, $method, true);
     }
 
     /**
@@ -174,4 +195,13 @@ class Jobs extends ContainerAware
     {
         db('db')->prepare("UPDATE jobs SET claimed = NULL WHERE claimed IS NOT NULL")->execute([]);
     }
+
+    /**
+     * See how many jobs there are.
+     */
+    public function count()
+    {
+        return db('db')->query("SELECT COUNT(*) FROM jobs")->fetchColumn();
+    }
+
 }

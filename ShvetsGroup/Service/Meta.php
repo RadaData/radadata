@@ -95,6 +95,7 @@ class Meta
         $html = download('/laws/stru/a', $re_download);
         $list = crawler($html);
 
+        // The loop here is to parse both domestic and international issuers.
         for ($i = 1; $i <= 2; $i++) {
             $XPATH = '//*[@id="page"]/div[2]/table/tbody/tr[1]/td[3]/div/div[2]/table[' . $i . ']/tbody/tr/td/table/tbody/tr';
             $group = null;

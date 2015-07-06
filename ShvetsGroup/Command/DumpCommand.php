@@ -2,11 +2,11 @@
 
 namespace ShvetsGroup\Command;
 
+use ShvetsGroup\Model\Law;
 use Symfony\Component\Console as Console;
 
 class DumpCommand extends Console\Command\Command
 {
-
     /**
      * @var \ShvetsGroup\Service\Jobs
      */
@@ -37,13 +37,15 @@ class DumpCommand extends Console\Command\Command
      */
     protected function execute(Console\Input\InputInterface $input, Console\Output\OutputInterface $output)
     {
-        $result_count = db('db')->query('SELECT COUNT(*) FROM laws WHERE status = 1')->fetchColumn();
-        $result = db('db')->query('SELECT law_id FROM laws  WHERE status = 1 ORDER BY law_id');
+        $result_count = Law::where('status', '<', Law::SAVED)->count();
+        // TODO: CHUNKS
+        $result = Law::where('status', '<', Law::SAVED)->orderBy('law_id')->get();
+
         $law_dir = $this->downloadsDir . '/zakon.rada.gov.ua/laws/show/';
 
         $i = 1;
-        foreach ($result as $row) {
-            $law_id = $row['law_id'];
+        foreach ($result as $law) {
+            $law_id = $law->law_id;
             $law_path = $law_dir . $law_id;
 
             foreach (glob($law_path . "/*") as $file_path) {
@@ -58,7 +60,7 @@ class DumpCommand extends Console\Command\Command
                         ':download_date' => $download_date,
                         ':text' => $text
                     ]);
-                mark_law($law_id, SAVED);
+                Law::find($law_id)->update(['status' => Law::SAVED]);
             }
 
             print("\rAdded " . $i . ' of ' . $result_count . ' (' . floor($i / $result_count * 100) . '%)');

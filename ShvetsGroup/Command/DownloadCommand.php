@@ -2,6 +2,7 @@
 
 namespace ShvetsGroup\Command;
 
+use ShvetsGroup\Model\Law;
 use Symfony\Component\Console as Console;
 
 class DownloadCommand extends Console\Command\Command
@@ -13,6 +14,7 @@ class DownloadCommand extends Console\Command\Command
     private $jobs;
 
     private $reset = false;
+
     private $re_download = false;
 
     /**
@@ -44,49 +46,81 @@ class DownloadCommand extends Console\Command\Command
         $this->re_download = $input->getOption('download');
 
         if ($this->reset) {
-            $this->jobs->deleteAll('download');
-
-            $i = 0;
-            $result = db('db')->query('SELECT law_id FROM laws WHERE status = ' . NOT_DOWNLOADED . ' ORDER BY law_id');
-            foreach ($result as $row) {
-                $this->jobs->add('download_command', 'downloadLaw', ['id' => $row['law_id']], 'download');
-                $i++;
-            }
-            _log($i . ' jobs added.');
+            $this->downloadNewLaws();
         }
-        $this->jobs->cleanup();
         $this->jobs->launch(50, 'download');
 
         return true;
     }
 
     /**
-     * Download a specific law page.
+     * Reset download jobs.
+     */
+    function downloadNewLaws()
+    {
+        $this->jobs->deleteAll('download');
+
+        // TODO: CHUNKS
+        foreach (Law::where('status', Law::NOT_DOWNLOADED)->get() as $law) {
+            $this->jobs->add('download_command', 'downloadCard', ['law_id' => $law->law_id], 'download');
+        }
+
+        foreach (Law::where('status', Law::DOWNLOADED_CARD)->get() as $law) {
+            $this->jobs->add('download_command', 'downloadRevisions', ['law_id' => $law->law_id], 'download');
+        }
+
+        foreach (Law::where('status', Law::DOWNLOADED_REVISIONS)->get() as $law) {
+            $this->jobs->add('download_command', 'downloadRelations', ['law_id' => $law->law_id], 'download');
+        }
+    }
+
+    /**
+     * Download all law pages (card, revisions, relations).
      *
      * @param string $law_id Law ID.
      */
     function downloadLaw($law_id)
     {
+        $this->jobs->add('download_command', 'downloadCard', ['id' => $law_id], 'download');
+        $this->jobs->add('download_command', 'downloadRevisions', ['id' => $law_id], 'download');
+        $this->jobs->add('download_command', 'downloadRelations', ['id' => $law_id], 'download');
+    }
+
+    /**
+     * Download a specific law's card page.
+     *
+     * @param string $law_id Law ID.
+     */
+    function downloadCard($law_id)
+    {
         try {
             $html = download('/laws/card/' . $law_id, $this->re_download, '/laws/show/' . $law_id . '/card');
 
-            mark_law($law_id, DOWNLOADED_CARD);
+            // TODO: parse card data
+
+            Law::find($law_id)->update(['status' => Law::DOWNLOADED_CARD]);
 
             if (strpos($html, 'Текст відсутній') !== false || strpos($html, 'Текст документа') === false) {
-                mark_law($law_id, DOWNLOADED_CARD, NO_TEXT);
+                Law::find($law_id)->update(['has_text' => Law::NO_TEXT]);
             }
 
-            //else {
-            //    $url = '/laws/show/' . $law_id . '/page';
-            //    $html = download($url, false, null, ['required' => ['<div id="article"', '</body>']]);
-            //    while (preg_match('|<a href="?(.*?)"? title="наступна сторінка">наступна сторінка</a>|', $html, $matches)) {
-            //        $url = urldecode($matches[1]);
-            //        $html = download($url, false, null, ['required' => ['<div id="article"', '</body>']]);
-            //    }
-            //    mark_law($law_id, DOWNLOADED_REVISIONS, HAS_TEXT);
-            //}
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             _log($e->getMessage(), 'red');
         }
+    }
+
+    /**
+     * Download a specific law's revision pages.
+     *
+     * @param string $law_id Law ID.
+     */
+    function downloadRevisions($law_id)
+    {
+        if (!Law::find($law_id)->has_text) {
+            Law::find($law_id)->update(['status' => Law::DOWNLOADED_REVISIONS]);
+            return;
+        }
+
+        // TODO: the actual parsing
     }
 }

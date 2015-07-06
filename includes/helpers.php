@@ -3,21 +3,8 @@
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
-define('LAW_PAGE', 1);
-
-define('UNKNOWN', 0);
-define('HAS_TEXT', 1);
-define('NO_TEXT', 10);
-
 define('SUCCESS', 10);
 define('FAILURE', 3);
-
-define('NOT_DOWNLOADED', 0);
-define('DOWNLOADED_CARD', 5);
-define('DOWNLOADED_REVISIONS', 10);
-define('DOWNLOADED_RELATIONS', 15);
-define('SAVED', 100);
-
 
 require_once __DIR__ . '/database.php';
 require_once __DIR__ . '/variables.php';
@@ -91,49 +78,6 @@ function better_trim($text) {
 }
 
 /**
- * Whether or not law has been discovered previously.
- *
- * @param string $law_url Law page URL.
- *
- * @return bool
- */
-function is_law_discovered($law_url)
-{
-    $result = db('db')->prepare("SELECT COUNT(*) FROM laws WHERE law_id = :law_id");
-    $result->execute([':law_id' => URL2LawId($law_url)]);
-
-    return (bool) $result->fetchColumn();
-}
-
-/**
- * Add the law url (or array) to the database for future scans.
- *
- * @param array|string $law_url URL of particular law (or array).
- */
-function mark_law_discovered($law_url)
-{
-    if (!is_array($law_url)) {
-        $law_url = [$law_url];
-    }
-
-    $values = [];
-    foreach ($law_url as $url) {
-        $values[] = "('" . URL2LawId($url) . "', '" . NOT_DOWNLOADED . "')";
-    }
-    $sql = "REPLACE INTO laws (law_id, status) VALUES " . implode(', ', $values);
-    db('db')->exec($sql);
-}
-
-function mark_law($law_id, $downloaded, $has_text = UNKNOWN) {
-	db('db')->prepare("UPDATE laws SET status = :status, has_text = :has_text WHERE law_id = :law_id")
-		->execute([
-			':status' => $downloaded,
-			':has_text' => $has_text,
-			':law_id' => $law_id
-		]);
-}
-
-/**
  * Return DOMCrawler from a HTML string.
  *
  * @param $html
@@ -173,9 +117,4 @@ function shortURL($url)
 function fullURL($url)
 {
 	return downloader()->fullURL($url);
-}
-
-function URL2LawId($url)
-{
-	return preg_replace('|/laws/show/|', '', urldecode(shortURL($url)));
 }

@@ -2,6 +2,9 @@
 
 namespace ShvetsGroup\Service;
 
+use Aws\Ec2\Ec2Client;
+use GuzzleHttp\Promise;
+
 class Proxy
 {
 
@@ -15,6 +18,127 @@ class Proxy
      */
     private $proxies = [];
 
+    private $ec2Client;
+
+    public function __construct()
+    {
+        $this->ec2Client = Ec2Client::factory(aws());
+    }
+
+    public function killAll()
+    {
+        $this->dropConnections();
+        $promises = [
+            'instances'     => $this->terminateInstances(),
+            'spot_requests' => $this->cancelSpotRequests()
+        ];
+        Promise\unwrap($promises);
+    }
+
+    private function getProxyInstances($key = null)
+    {
+        $result = $this->ec2Client->describeInstances([
+            'Filters' => [
+                ['Name' => 'instance-type', 'Values' => ['t1.micro']],
+                ['Name' => 'instance-state-name', 'Values' => ['running']],
+            ]
+        ]);
+
+        $path = 'Reservations[].Instances[]';
+        if ($key) {
+            $path .= '.' . $key;
+        }
+        $results = $result->getPath($path);
+
+        return $results;
+    }
+
+    private function terminateInstances()
+    {
+        $instance_ids = $this->getProxyInstances('InstanceId');
+
+        if (empty($instance_ids)) {
+            return new Promise\FulfilledPromise(true);
+        }
+
+        return $this->ec2Client->terminateInstancesAsync(['InstanceIds' => $instance_ids]);
+    }
+
+    private function cancelSpotRequests()
+    {
+        $result = $this->ec2Client->describeSpotInstanceRequests([
+            'Filters' => [
+                ['Name' => 'state', 'Values' => ['open', 'active', 'closed']],
+            ]
+        ]);
+        $spot_request_ids = $result->getPath('SpotInstanceRequests[].SpotInstanceRequestId');
+
+        if (empty($spot_request_ids)) {
+            return new Promise\FulfilledPromise(true);
+        }
+
+        return $this->ec2Client->cancelSpotInstanceRequestsAsync(['SpotInstanceRequestIds' => $spot_request_ids]);
+    }
+
+    /**
+     * Sleep until 90% of required proxies are born or die after 10 minutes of waiting.
+     */
+    public function makeProxiesOrDie($count, $timeout = 10)
+    {
+        try {
+            $instanceIds = $this->makeSpotRequests($count);
+
+            $this->ec2Client->waitUntil('InstanceRunning', [
+                'InstanceIds' => $instanceIds,
+            ]);
+            $this->ec2Client->waitUntil('InstanceStatusOk', [
+                'InstanceIds' => $instanceIds,
+            ]);
+            $this->establishConnections();
+        }
+        catch (Aws\Common\Exception\RuntimeException $e) {
+            _log('makeProxiesOrDie: ' . $e->getMessage(), 'red');
+            $this->proxy->killAll();
+            die();
+        }
+    }
+
+    private function makeSpotRequests($count)
+    {
+        try {
+            $result = $this->ec2Client->requestSpotInstances([
+                'InstanceCount'       => $count,
+                'LaunchSpecification' => [
+                    'ImageId' => 'ami-4a268b3d',
+                    'InstanceType' => 't1.micro',
+                    'KeyName' => 'AMI',
+                    'Monitoring' => [
+                        'Enabled' => false,
+                    ],
+                    'SecurityGroupIds' => ['sg-f5a19481'],
+                ],
+                'SpotPrice' => '0.01'
+            ]);
+            $spotRequestIds = $result->getPath('SpotInstanceRequests[].SpotInstanceRequestId');
+
+            $this->ec2Client->waitUntil('SpotInstanceRequestFulfilled', [
+                'SpotInstanceRequestIds' => $spotRequestIds,
+            ]);
+
+            $result = $this->ec2Client->describeSpotInstanceRequests([
+                'SpotInstanceRequestIds' => $spotRequestIds
+            ]);
+            $instanceIds = $result->getPath('SpotInstanceRequests[].InstanceId');
+
+            return $instanceIds;
+        }
+        catch (Aws\Common\Exception\RuntimeException $e) {
+            _log('makeSpotRequests: ' . $e->getMessage(), 'red');
+            $this->proxy->killAll();
+            die();
+        }
+    }
+
     /**
      * Get a proxy address from the pool. If proxy config is disabled, 'localhost' will be returned.
      *
@@ -27,7 +151,8 @@ class Proxy
         }
 
         try {
-            $this->createProxies();
+            $this->establishConnections();
+
             return $this->selectProxy();
         } catch (\Exception $e) {
             _log($e->getMessage(), 'red');
@@ -47,7 +172,7 @@ class Proxy
         }
 
         // Init proxies if needed.
-        $this->createProxies();
+        $this->establishConnections();
 
         return count($this->proxies);
     }
@@ -71,17 +196,16 @@ class Proxy
      *
      * @throws \Exception
      */
-    private function createProxies()
+    private function establishConnections()
     {
         static $initialized;
         if ($initialized) {
             return;
         }
 
-        $proxy_port = 7999; // Starting proxy port.
+        $this->dropConnections();
 
-        exec('pkill -f "ssh -o UserKnownHostsFile"');
-        db('misc')->exec('DELETE FROM proxies');
+        $proxy_port = 7999; // Starting proxy port.
 
         $ips = $this->describeAvailableEC2Instances();
 
@@ -107,6 +231,15 @@ class Proxy
     }
 
     /**
+     * Drop connections with proxy servers.
+     */
+    private function dropConnections()
+    {
+        exec('pkill -f "ssh -o UserKnownHostsFile"');
+        db('misc')->exec('DELETE FROM proxies');
+    }
+
+    /**
      * Get the list of live Amazon servers, which server as proxies. Micro servers (t1.micro) are used, since their only
      * job is to provide ssh tunnel.
      *
@@ -115,27 +248,9 @@ class Proxy
      */
     private function describeAvailableEC2Instances()
     {
-        $ips = [];
-        $ec2Client = \Aws\Ec2\Ec2Client::factory(aws());
-        $result = $ec2Client->DescribeInstances([
-            'Filters' => [
-                ['Name' => 'instance-type', 'Values' => ['t1.micro']],
-            ]
-        ]);
-        $reservations = $result['Reservations'];
-        foreach ($reservations as $reservation) {
-            $instances = $reservation['Instances'];
-            foreach ($instances as $instance) {
-                if ($instance['State']['Name'] == 'running' && isset($instance['PublicIpAddress'])) {
-                    $ips[] = $instance['PublicIpAddress'];
-                }
-            }
-        }
-
+        $ips = $this->getProxyInstances('PublicIpAddress');
         if (!count($ips)) {
-            throw new \Exception('Error: There is no t1.micro instances for proxies in eu-west-1 region.');
-        } else {
-            _log(count($ips) . ' proxy servers found', 'green');
+            throw new \Exception('There are no available IP addresses of proxies.');
         }
 
         return $ips;

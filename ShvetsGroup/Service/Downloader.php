@@ -141,32 +141,18 @@ class Downloader
      */
     private function doDownload($url, $delay = 0)
     {
-        if (1) { //isset($GLOBALS['phantom']) && $GLOBALS['phantom']) {
-            $client = PJClient::getInstance();
-            if (variable_get('use_proxy')) {
-                $client->addOption('--proxy=' . $this->proxy->getProxy());
-            }
-            $client->addOption('--load-images=false');
-            $request = $client->getMessageFactory()->createRequest($url);
-            $request->setDelay($delay);
-            $request->addHeader('User-Agent', $this->identity->getUserAgent());
-            $response = $client->getMessageFactory()->createResponse();
-            $client->send($request, $response);
-            $status = $response->getStatus();
-            $html = $response->getContent();
-        } else {
-            $client = new GzClient();
-            $client->getEmitter()->attach(new CharsetSubscriber);
-            $headers = ['User-Agent' => $this->identity->getUserAgent()];
-            if (variable_get('use_proxy')) {
-                $headers += ['proxy' => $this->proxy->getProxy()];
-            }
-            $response = $client->get($url, [
-                'headers' => $headers
-            ]);
-            $status = $response->getStatusCode();
-            $html = $response->getBody()->__toString();
+        $client = PJClient::getInstance();
+        if (variable_get('use_proxy')) {
+            $client->addOption('--proxy=' . $this->proxy->getProxy());
         }
+        $client->addOption('--load-images=false');
+        $request = $client->getMessageFactory()->createRequest($url);
+        $request->setDelay($delay);
+        $request->addHeader('User-Agent', $this->identity->getUserAgent());
+        $response = $client->getMessageFactory()->createResponse();
+        $client->send($request, $response);
+        $status = $response->getStatus();
+        $html = $response->getContent();
 
         return [
             'status' => $status,

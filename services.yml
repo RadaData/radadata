@@ -21,13 +21,13 @@ services:
     proxy:
         class:     \ShvetsGroup\Service\Proxy
 
+    status_command:
+       class:     \ShvetsGroup\Command\StatusCommand
+       arguments: [ '%downloads_dir%', @jobs, @proxy ]
+
     discover_command:
         class:     \ShvetsGroup\Command\DiscoverCommand
         arguments: [ @jobs, @meta ]
-
-    update_command:
-       class:     \ShvetsGroup\Command\UpdateCommand
-       arguments: [ @jobs, @meta ]
 
     download_command:
        class:     \ShvetsGroup\Command\DownloadCommand
@@ -45,5 +45,7 @@ services:
        class:     \ShvetsGroup\Command\CleanupCommand
        arguments: [ @jobs ]
 
-
+    cron_command:
+       class:     \ShvetsGroup\Command\CronCommand
+       arguments: [ @discover_command, @download_command, @jobs, @proxy ]
 

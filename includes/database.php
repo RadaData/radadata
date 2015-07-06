@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Database\Capsule\Manager as Capsule;
 
 /**
  * @return PDO
@@ -31,3 +32,17 @@ function close_db($database = 'db')
         $db[$database] = null;
     }
 }
+
+
+$capsule = new Capsule;
+$capsule->addConnection(array(
+    'driver'    => 'mysql',
+    'host'      => 'localhost',
+    'database'  => 'radadata',
+    'username'  => 'root',
+    'password'  => 'root',
+    'charset'   => 'utf8',
+    'collation' => 'utf8_unicode_ci',
+    'prefix'    => ''
+));
+$capsule->bootEloquent();
