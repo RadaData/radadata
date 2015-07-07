@@ -1,7 +1,28 @@
 parameters:
     downloads_dir: '../downloads'
+    use_proxy: 0
+    db:
+      database: radadata
+      username: root
+      password: root
+      host: localhost
+      port: 3306
+      driver: mysql
+      prefix:
+      charset: utf8
+      collation: utf8_unicode_ci
+    aws:
+      version: latest
+      profile: default
+      region: eu-west-1
+      server_keys_dir: 'app/servers'
+
 
 services:
+    database:
+        class:     \ShvetsGroup\Service\Database
+        arguments: [ '%db%' ]
+
     meta:
         class:     \ShvetsGroup\Service\Meta
 
@@ -20,6 +41,7 @@ services:
 
     proxy:
         class:     \ShvetsGroup\Service\Proxy
+        arguments: [ '%aws%', '%use_proxy%' ]
 
     status_command:
        class:     \ShvetsGroup\Command\StatusCommand

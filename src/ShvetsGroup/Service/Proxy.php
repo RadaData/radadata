@@ -18,11 +18,31 @@ class Proxy
      */
     private $proxies = [];
 
+    /**
+     * @var Ec2Client.
+     */
     private $ec2Client;
 
-    public function __construct()
+    /**
+     * @var string Absolute path to server keys.
+     */
+    private $serverKeysPath;
+
+    /**
+     * @var string Whether or not to use proxies.
+     */
+    private $useProxy;
+
+    public function __construct($aws_config, $useProxy)
     {
-        $this->ec2Client = new Ec2Client(aws());
+        $this->ec2Client = new Ec2Client($aws_config);
+        $this->serverKeysPath = BASE_PATH . $aws_config['server_keys_dir'];
+        $this->useProxy = $useProxy;
+    }
+
+    public function useProxy()
+    {
+        return $this->useProxy;
     }
 
     public function killAll()
@@ -146,7 +166,7 @@ class Proxy
      */
     public function getProxy()
     {
-        if (!variable_get('use_proxy')) {
+        if (!$this->useProxy()) {
             return 'localhost';
         }
 
@@ -167,7 +187,7 @@ class Proxy
      */
     public function count()
     {
-        if (!variable_get('use_proxy')) {
+        if (!$this->useProxy()) {
             return 1;
         }
 
@@ -219,7 +239,7 @@ class Proxy
                 continue;
             } // This will be executed by forks.
             else {
-                exec('ssh -o UserKnownHostsFile=/dev/null -o "StrictHostKeyChecking no" -i servers/AMI.pem -L ' . $proxy_port . ':localhost:8888 -N ubuntu@' . $ip);
+                exec('ssh -o UserKnownHostsFile=/dev/null -o "StrictHostKeyChecking no" -i ' . $this->serverKeysPath . '/AMI.pem -L ' . $proxy_port . ':localhost:8888 -N ubuntu@' . $ip);
                 die();
             }
         }

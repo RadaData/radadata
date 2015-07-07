@@ -3,11 +3,11 @@
 namespace ShvetsGroup\Service;
 
 use JonnyW\PhantomJs\Client as PJClient;
-use GuzzleHttp\Client as GzClient;
-use DigginGuzzle4CharsetSubscriber\CharsetSubscriber;
 
 class Downloader
 {
+    const SUCCESS = 10;
+    const FAILURE = 3;
 
     /**
      * Where to download the web pages.
@@ -68,7 +68,7 @@ class Downloader
         }
 
         $attempt = 0;
-        while ($attempt < FAILURE) {
+        while ($attempt < Downloader::FAILURE) {
             try {
                 $result = $this->doDownload($url);
 
@@ -142,7 +142,7 @@ class Downloader
     private function doDownload($url, $delay = 0)
     {
         $client = PJClient::getInstance();
-        if (variable_get('use_proxy')) {
+        if ($this->proxy->useProxy()) {
             $client->addOption('--proxy=' . $this->proxy->getProxy());
         }
         $client->addOption('--load-images=false');

@@ -62,7 +62,7 @@ class CronCommand extends Console\Command\Command
      */
     protected function execute(Console\Input\InputInterface $input, Console\Output\OutputInterface $output)
     {
-        if (variable_get('use_proxy')) {
+        if ($this->proxy->useProxy()) {
             // Cron command should re-launch new proxies, because existing proxies might be already banned by rada since
             // the last run.
             $this->proxy->killAll();

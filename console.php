@@ -5,7 +5,7 @@ define('BASE_PATH', __DIR__ . "/");
 // console.php
 require_once __DIR__.'/vendor/autoload.php';
 
-require_once __DIR__.'/includes/helpers.php';
+require_once __DIR__.'/src/includes/helpers.php';
 
 use Symfony\Component\Console as Console;
 
@@ -16,7 +16,9 @@ use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
 global $container;
 $container = new ContainerBuilder();
 $loader = new YamlFileLoader($container, new FileLocator(__DIR__));
-$loader->load('services.yml');
+$loader->load('app/config/services.yml');
+
+$container->get('database');
 
 $application = new Console\Application('RadaDownloader', '1.0.0');
 $application->add($container->get('status_command'));

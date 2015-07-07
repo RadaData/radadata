@@ -16,9 +16,9 @@
     ]
   },
   "autoload": {
-    "psr-4": {"ShvetsGroup\\": "ShvetsGroup/"}
+    "psr-4": {"ShvetsGroup\\": "src/ShvetsGroup/"}
   },
   "config": {
-    "bin-dir": "bin"
+    "bin-dir": "app/bin"
   }
 }

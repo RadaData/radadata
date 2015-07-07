@@ -75,9 +75,9 @@ class DiscoverCommand extends Console\Command\Command
      */
     public function discoverNewLaws($reset = false)
     {
-        $most_recent = Law::orderBy('date')->take(1)->value('date');
+        $most_recent = Law::orderBy('date', 'desc')->take(1)->value('date');
         if ($most_recent && !$reset) {
-            $this->addLawListJobs($most_recent . '-1 day', true);
+            $this->addLawListJobs($most_recent . ' -1 day', true);
         }
         else {
             $this->addLawListJobs();

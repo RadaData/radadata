@@ -3,11 +3,7 @@
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
-define('SUCCESS', 10);
-define('FAILURE', 3);
-
-require_once __DIR__ . '/database.php';
-require_once __DIR__ . '/variables.php';
+define('LOG_PATH', BASE_PATH . 'logs/');
 
 $GLOBALS['start_time'] = time();
 
@@ -36,10 +32,10 @@ function _log($message, $style = 'default')
 		$output = "\n\n" . $output;
 	}
 	$args = shell_parameters();
-	if (!is_dir(__DIR__ . '/../logs')) {
-		mkdir(__DIR__ . '/../logs');
+	if (!is_dir(LOG_PATH)) {
+		mkdir(LOG_PATH);
 	}
-	$log_file = isset($args['log']) ? $args['log'] : __DIR__ . '/../logs/log.txt';
+	$log_file = isset($args['log']) ? $args['log'] : LOG_PATH . 'log.txt';
 	file_put_contents($log_file, $output, FILE_APPEND);
 
 
@@ -54,13 +50,6 @@ function _log($message, $style = 'default')
 		$output = "\033[1m" . $output . "\033[0m";
 	}
 	print($output);
-}
-
-function aws()
-{
-	global $conf;
-
-	return $conf['aws'];
 }
 
 function delTree($dir) {
@@ -104,7 +93,7 @@ function downloader() {
     return container()->get('downloader');
 }
 
-function download($url, $re_download = false, $save_as = null, $required_text = array(), $cant_change_mirror = false)
+function download($url, $re_download = false, $save_as = null, $required_text = [], $cant_change_mirror = false)
 {
 	return downloader()->download($url, $re_download, $save_as, $required_text, $cant_change_mirror);
 }
