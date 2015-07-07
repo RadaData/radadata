@@ -11,7 +11,7 @@ class CronCommand extends Console\Command\Command
     /**
      * @var int
      */
-    private $workers = 1;
+    private $workers = 20;
 
     /**
      * @var DiscoverCommand
@@ -44,6 +44,7 @@ class CronCommand extends Console\Command\Command
         parent::__construct('cron');
 
         $this->setDescription('Cron runner.');
+        $this->addOption('single', 's', Console\Input\InputOption::VALUE_NONE, 'Run single instance of the script (old instances will be terminated).');
 
         $this->discoverer = $discoverer;
         $this->downloader = $downloader;
@@ -62,6 +63,10 @@ class CronCommand extends Console\Command\Command
      */
     protected function execute(Console\Input\InputInterface $input, Console\Output\OutputInterface $output)
     {
+        if ($input->getOption('single')) {
+            exec('sudo pkill -f " console.php cron"');
+        }
+
         if ($this->proxy->useProxy()) {
             // Cron command should re-launch new proxies, because existing proxies might be already banned by rada since
             // the last run.
