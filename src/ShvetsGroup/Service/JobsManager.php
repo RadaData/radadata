@@ -105,7 +105,7 @@ class JobsManager extends ContainerAware
         $job = null;
 
         DB::connection()->transaction(function() use ($group, $service, $method, &$job) {
-            $query = Job::whereNull('claimed')->orderBy('job_id');
+            $query = Job::whereNull('claimed')->orderBy('id');
             if ($group) {
                 $query->where('group', $group);
             }

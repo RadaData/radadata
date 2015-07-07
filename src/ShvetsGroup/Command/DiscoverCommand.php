@@ -143,16 +143,16 @@ class DiscoverCommand extends Console\Command\Command
                 ->each(
                     function (\Symfony\Component\DomCrawler\Crawler $node) {
                         $url = $node->filterXPath('//a')->attr('href');
-                        $law_id = preg_replace('|/laws/show/|', '', urldecode(shortURL($url)));
+                        $id = preg_replace('|/laws/show/|', '', urldecode(shortURL($url)));
 
                         $raw_date = $node->filterXPath('//font[@color="#004499"]')->text();
                         if (!preg_match('|[0-9]{2}\.[0-9]{2}\.[0-9]{4}|', $raw_date)) {
-                            throw new \Exception("Date has not been found in #{$law_id} at text: " . $node->text());
+                            throw new \Exception("Date has not been found in #{$id} at text: " . $node->text());
                         }
                         $date = date_format(date_create_from_format('d.m.Y', $raw_date), 'Y-m-d');
 
-                        Law::updateOrCreate(['law_id' => $law_id, 'date' => $date]);
-                        $this->jobsManager->add('download_command', 'downloadLaw', ['law_id' => $law_id], 'download');
+                        Law::updateOrCreate(['id' => $id, 'date' => $date]);
+                        $this->jobsManager->add('download_command', 'downloadLaw', ['id' => $id], 'download');
                     }
                 );
 

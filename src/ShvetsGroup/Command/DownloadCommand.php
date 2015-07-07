@@ -62,46 +62,48 @@ class DownloadCommand extends Console\Command\Command
 
         // TODO: CHUNKS
         foreach (Law::where('status', Law::NOT_DOWNLOADED)->get() as $law) {
-            $this->jobsManager->add('download_command', 'downloadCard', ['law_id' => $law->law_id], 'download');
+            $this->jobsManager->add('download_command', 'downloadCard', ['id' => $law->id], 'download');
         }
 
         foreach (Law::where('status', Law::DOWNLOADED_CARD)->get() as $law) {
-            $this->jobsManager->add('download_command', 'downloadRevisions', ['law_id' => $law->law_id], 'download');
+            $this->jobsManager->add('download_command', 'downloadRevisions', ['id' => $law->id], 'download');
         }
 
         foreach (Law::where('status', Law::DOWNLOADED_REVISIONS)->get() as $law) {
-            $this->jobsManager->add('download_command', 'downloadRelations', ['law_id' => $law->law_id], 'download');
+            $this->jobsManager->add('download_command', 'downloadRelations', ['id' => $law->id], 'download');
         }
     }
 
     /**
      * Download all law pages (card, revisions, relations).
      *
-     * @param string $law_id Law ID.
+     * @param string $id Law ID.
      */
-    function downloadLaw($law_id)
+    function downloadLaw($id)
     {
-        $this->jobsManager->add('download_command', 'downloadCard', ['id' => $law_id], 'download');
-        $this->jobsManager->add('download_command', 'downloadRevisions', ['id' => $law_id], 'download');
-        $this->jobsManager->add('download_command', 'downloadRelations', ['id' => $law_id], 'download');
+        $this->jobsManager->add('download_command', 'downloadCard', ['id' => $id], 'download');
+        $this->jobsManager->add('download_command', 'downloadRevisions', ['id' => $id], 'download');
+        $this->jobsManager->add('download_command', 'downloadRelations', ['id' => $id], 'download');
     }
 
     /**
      * Download a specific law's card page.
      *
-     * @param string $law_id Law ID.
+     * @param string $id Law ID.
      */
-    function downloadCard($law_id)
+    function downloadCard($id)
     {
         try {
-            $html = download('/laws/card/' . $law_id, $this->re_download, '/laws/show/' . $law_id . '/card');
+            $law = Law::find($id);
+
+            $html = download('/laws/card/' . $id, $this->re_download, '/laws/show/' . $id . '/card');
 
             // TODO: parse card data
 
-            Law::find($law_id)->update(['status' => Law::DOWNLOADED_CARD]);
+            $law->update(['status' => Law::DOWNLOADED_CARD]);
 
             if (strpos($html, 'Текст відсутній') !== false || strpos($html, 'Текст документа') === false) {
-                Law::find($law_id)->update(['has_text' => Law::NO_TEXT]);
+                $law->update(['has_text' => Law::NO_TEXT]);
             }
 
         } catch (\Exception $e) {
@@ -112,12 +114,14 @@ class DownloadCommand extends Console\Command\Command
     /**
      * Download a specific law's revision pages.
      *
-     * @param string $law_id Law ID.
+     * @param string $id Law ID.
      */
-    function downloadRevisions($law_id)
+    function downloadRevisions($id)
     {
-        if (!Law::find($law_id)->has_text) {
-            Law::find($law_id)->update(['status' => Law::DOWNLOADED_REVISIONS]);
+        $law = Law::find($id);
+
+        if (!$law->has_text) {
+            $law->update(['status' => Law::DOWNLOADED_REVISIONS]);
             return;
         }
 

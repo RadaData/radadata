@@ -6,7 +6,6 @@ use Illuminate\Database\Eloquent\Model;
 
 class Job extends Model
 {
-    public $primaryKey = 'job_id';
     public $timestamps = false;
     public $fillable = ['service', 'method', 'parameters', 'group', 'claimed'];
     protected $casts = [

@@ -50,7 +50,7 @@ class CheckCommand extends Console\Command\Command
         $result_count = Law::where('status', '<', Law::SAVED)->count();
 
         // TODO: CHUNKS
-        $result = Law::where('status', '<', Law::SAVED)->orderBy('law_id')->get();
+        $result = Law::where('status', '<', Law::SAVED)->orderBy('id')->get();
 
         $law_dir = $this->downloadsDir . '/zakon.rada.gov.ua/laws/show/';
 
@@ -75,11 +75,10 @@ class CheckCommand extends Console\Command\Command
 
         $i = 1;
         foreach ($result as $law) {
-            $law_id = $law->law_id;
-            $law_path = $law_dir . $law_id;
-            $card_path = $law_dir . $law_id . '/card.html';
-            $text_path = $law_dir . $law_id . '/text.html';
-            $page_path = $law_dir . $law_id . '/page.html';
+            $law_path = $law_dir . $law->id;
+            $card_path = $law_dir . $law->id . '/card.html';
+            $text_path = $law_dir . $law->id . '/text.html';
+            $page_path = $law_dir . $law->id . '/page.html';
 
             if ($law->status == Law::NOT_DOWNLOADED && is_dir($law_path)) {
                 $nd_orphaned_dirs++;
@@ -93,7 +92,7 @@ class CheckCommand extends Console\Command\Command
                 $d_no_files++;
                 if ($fix) {
                     remove_dir($law_path);
-                    Law::find($law_id)->update(['status' => Law::NOT_DOWNLOADED]);
+                    $law->update(['status' => Law::NOT_DOWNLOADED]);
                 }
             }
             if ($law->status >= Law::DOWNLOADED_REVISIONS && $law->has_text == Law::HAS_TEXT && (file_exists($text_path) || file_exists($page_path))) {
@@ -101,7 +100,7 @@ class CheckCommand extends Console\Command\Command
                     $d_fake_content++;
                     if ($fix) {
                         remove_dir($law_path);
-                        Law::find($law_id)->update(['status' => Law::NOT_DOWNLOADED]);
+                        $law->update(['status' => Law::NOT_DOWNLOADED]);
                     }
                 }
             }
@@ -111,7 +110,7 @@ class CheckCommand extends Console\Command\Command
                     $d_fake_content++;
                     if ($fix) {
                         remove_dir($law_path);
-                        Law::find($law_id)->update(['status' => Law::NOT_DOWNLOADED]);
+                        $law->update(['status' => Law::NOT_DOWNLOADED]);
                     }
                 }
             }
@@ -121,18 +120,18 @@ class CheckCommand extends Console\Command\Command
                 if (strpos($html, 'Текст відсутній') !== false) {
                     $d_unknown_text_no_text++;
                     if ($fix) {
-                        Law::find($law_id)->update(['status' => Law::DOWNLOADED_CARD, 'has_text' => Law::NO_TEXT]);
+                        $law->update(['status' => Law::DOWNLOADED_CARD, 'has_text' => Law::NO_TEXT]);
                     }
                 } else {
                     $d_no_files++;
                     if ($fix) {
-                        Law::find($law_id)->update(['status' => Law::NOT_DOWNLOADED]);
+                        $law->update(['status' => Law::NOT_DOWNLOADED]);
                     }
                 }
             }
             if ($law->status > Law::NOT_DOWNLOADED && $law->has_text == Law::UNKNOWN && !(file_exists($text_path) || file_exists($page_path)) && !file_exists($card_path)) {
                 if ($fix) {
-                    Law::find($law_id)->update(['status' => Law::NOT_DOWNLOADED]);
+                    $law->update(['status' => Law::NOT_DOWNLOADED]);
                 }
             }
             print("\rChecked " . $i . ' of ' . $result_count . ' (' . floor($i / $result_count * 100) . '%)');

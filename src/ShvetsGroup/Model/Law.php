@@ -17,7 +17,6 @@ class Law extends Model
     const SAVED = 100;
 
 
-    public $primaryKey = 'law_id';
     public $timestamps = false;
     public $fillable = ['date', 'status', 'has_text'];
 }

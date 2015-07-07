@@ -21,7 +21,7 @@ class Meta
      * Get associate array of all issuers.
      *
      * @return object['name']
-     *              ['issuer_id']  string
+     *              ['id']  string
      *              ['name']       string
      *              ['full_name']  string
      *              ['group_name'] string
@@ -50,7 +50,7 @@ class Meta
         DB::table('issuers')->delete();
         foreach ($issuers as $issuer) {
             DB::table('issuers')->insert(
-                ['issuer_id'  => $issuer->issuer_id,
+                ['id'         => $issuer->id,
                  'name'       => $issuer->name,
                  'full_name'  => $issuer->full_name,
                  'group_name' => $issuer->group_name,
@@ -70,7 +70,7 @@ class Meta
         DB::table('types')->delete();
         foreach ($types as $type) {
             DB::table('types')->insert(
-                ['type_id'  => $type->type_id, 'name' => $type->name]
+                ['id'  => $type->id, 'name' => $type->name]
             );
         }
     }
@@ -85,7 +85,7 @@ class Meta
         DB::table('states')->delete();
         foreach ($states as $state) {
             DB::table('states')->insert(
-                ['state_id'  => $state->state_id, 'name' => $state->name]
+                ['id'  => $state->id, 'name' => $state->name]
             );
         }
     }
@@ -117,7 +117,7 @@ class Meta
                         $issuer_link = $node->filterXPath('//td[2]/a');
                         $issuer = new \stdClass();
                         $issuer->url = $issuer_link->attr('href');
-                        $issuer->issuer_id = str_replace('/laws/main/', '', $issuer->url);
+                        $issuer->id = str_replace('/laws/main/', '', $issuer->url);
                         $issuer->group_name = $group;
                         $issuer->name = better_trim($issuer_link->text());
                         $issuer->full_name = null;
@@ -145,7 +145,7 @@ class Meta
                     $type_link = $node->filterXPath('//td[2]/a');
                     $type = new \stdClass();
                     $type->url = $type_link->attr('href');
-                    $type->type_id = str_replace('/laws/main/', '', $type->url);
+                    $type->id = str_replace('/laws/main/', '', $type->url);
                     $type->name = better_trim($type_link->text());
                     $types[$type->name] = $type;
                 }
@@ -162,7 +162,7 @@ class Meta
                     $state_link = $node->filterXPath('//td[2]/a');
                     $state = new \stdClass();
                     $state->url = $state_link->attr('href');
-                    $state->state_id = str_replace('/laws/main/', '', $state->url);
+                    $state->id = str_replace('/laws/main/', '', $state->url);
                     $state->name = better_trim($state_link->text());
                     $states[$state->name] = $state;
                 }

@@ -40,14 +40,13 @@ class DumpCommand extends Console\Command\Command
     {
         $result_count = Law::where('status', '<', Law::SAVED)->count();
         // TODO: CHUNKS
-        $result = Law::where('status', '<', Law::SAVED)->orderBy('law_id')->get();
+        $result = Law::where('status', '<', Law::SAVED)->orderBy('id')->get();
 
         $law_dir = $this->downloadsDir . '/zakon.rada.gov.ua/laws/show/';
 
         $i = 1;
         foreach ($result as $law) {
-            $law_id = $law->law_id;
-            $law_path = $law_dir . $law_id;
+            $law_path = $law_dir . $law->id;
 
             foreach (glob($law_path . "/*") as $file_path) {
                 $file = basename($file_path, ".html");
@@ -55,9 +54,9 @@ class DumpCommand extends Console\Command\Command
                 $text = file_get_contents($file_path);
 
                 DB::table('laws_raw')->insert(
-                    ['law_id' => $law_id, 'file' => $file, 'download_date' => $download_date, 'text' => $text]
+                    ['law_id' => $law->id, 'file' => $file, 'download_date' => $download_date, 'text' => $text]
                 );
-                Law::find($law_id)->update(['status' => Law::SAVED]);
+                $law->update(['status' => Law::SAVED]);
             }
 
             print("\rAdded " . $i . ' of ' . $result_count . ' (' . floor($i / $result_count * 100) . '%)');
