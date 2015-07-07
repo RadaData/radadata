@@ -6,6 +6,7 @@ use JonnyW\PhantomJs\Client as PJClient;
 
 class Downloader
 {
+
     const SUCCESS = 10;
     const FAILURE = 3;
 
@@ -41,25 +42,36 @@ class Downloader
     /**
      * Download a page.
      *
-     * @param string $url           URL of the page.
-     * @param bool   $re_download   Whether or not to re-download the page if it's already in cache.
-     * @param null   $save_as       Alternative file name for the page.
-     * @param array  $required_text If passed, this text should be found on the page in order to count the download
-     *                              successful.
-     * @param bool   $cant_change_mirror
+     * @param string $url URL of the page.
+     * @param array  $options
+     *                    - bool $re_download Whether or not to re-download the page if it's already in cache.
+     *                    - bool $save Whether or not to cache a local copy of the page.
+     *                    - string $save_as Alternative file name for the page.
+     *                    - array $required_text If passed, this text should be found on the page in order to count the
+     *                    download successful.
      *
      * @return string
      * @throws \Exception
      */
-    public function download($url, $re_download = false, $save_as = null, $required_text = [], $cant_change_mirror = false)
+    public function download($url, $options = [])
     {
-        $output = '';
         $url = $this->fullURL($url);
-        $save_as = $save_as ? $this->fullURL($save_as) : null;
+
+        $default_options = [
+            're_download'   => false,
+            'save'          => true,
+            'save_as'       => null,
+            'required_text' => [],
+        ];
+        $options = array_merge($options, $default_options);
+
+        $save_as = $options['save_as'] ? $this->fullURL($options['save_as']) : null;
+
+        $output = '';
         $output .= ($this->proxy->getProxy() . ' → ' . $this->shortURL($url) . ': ');
         $style = 'default';
 
-        if ($this->isDownloaded($save_as ?: $url) && !$re_download) {
+        if ($this->isDownloaded($save_as ?: $url) && !$options['re_download']) {
             $html = file_get_contents($this->URL2path($save_as ?: $url));
             $output .= ('* ');
             _log($output);
@@ -88,11 +100,11 @@ class Downloader
                             }
                         }
 
-                        if ($this->detectFakeContent($result['html'], $required_text)) {
+                        if ($this->detectFakeContent($result['html'], $options['required_text'])) {
                             $output .= ('-F-');
                             $style = 'yellow';
 
-                            if ($this->identity->switchIdentity($cant_change_mirror)) {
+                            if ($this->identity->switchIdentity()) {
                                 $url = $this->fullURL($url);
                                 continue 2;
                             } else {
@@ -101,7 +113,9 @@ class Downloader
                             }
                         }
 
-                        $this->saveFile($save_as ?: $url, $result['html']);
+                        if ($options['save']) {
+                            $this->saveFile($save_as ?: $url, $result['html']);
+                        }
 
                         $output .= ('@' . $result['status'] . ' ');
                         _log($output, $style);
@@ -139,10 +153,9 @@ class Downloader
      *
      * @return array
      */
-    private function doDownload($url, $delay = 0)
+    private function doDownload($url, $delay = 5)
     {
         $client = PJClient::getInstance();
-        $client->setBinDir('app/bin');
         if ($this->proxy->useProxy()) {
             $client->addOption('--proxy=' . $this->proxy->getProxy());
         }

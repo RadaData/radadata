@@ -99,7 +99,7 @@ class DownloadCommand extends Console\Command\Command
         try {
             $law = Law::find($id);
 
-            $html = download('/laws/card/' . $id, $this->re_download, '/laws/show/' . $id . '/card');
+            $html = download('/laws/card/' . $id, ['re_download' => $this->re_download, 'save_as' => '/laws/show/' . $id . '/card']);
 
             // TODO: parse card data
 

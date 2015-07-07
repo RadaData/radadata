@@ -93,9 +93,9 @@ function downloader() {
     return container()->get('downloader');
 }
 
-function download($url, $re_download = false, $save_as = null, $required_text = [], $cant_change_mirror = false)
+function download($url, $options = [])
 {
-	return downloader()->download($url, $re_download, $save_as, $required_text, $cant_change_mirror);
+	return downloader()->download($url, $options);
 }
 
 function shortURL($url)

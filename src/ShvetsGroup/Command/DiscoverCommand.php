@@ -101,7 +101,11 @@ class DiscoverCommand extends Console\Command\Command
         }
 
         while ($date < strtotime('midnight')) {
-            $this->jobsManager->add('discover_command', 'discoverDailyLawList', ['law_list_url' => '/laws/main/a' . date('Ymd', $date) . '/sp5/page', 're_download' => $re_download], 'discover');
+            $this->jobsManager->add('discover_command', 'discoverDailyLawList', [
+                'law_list_url' => '/laws/main/a' . date('Ymd', $date) . '/sp5/page',
+                'date' => date('Y-m-d', $date),
+                're_download' => $re_download
+            ], 'discover');
             $date = strtotime(date('c', $date) . '+1 day');
         }
 
@@ -112,16 +116,25 @@ class DiscoverCommand extends Console\Command\Command
      * Crawl the daily law list page. Take the number of law list pages from it and schedule crawls for each of them.
      *
      * @param string $law_list_url
+     * @param string $date
      * @param bool $re_download
      */
-    public function discoverDailyLawList($law_list_url, $re_download = false)
+    public function discoverDailyLawList($law_list_url, $date, $re_download = false)
     {
         try {
-            $first_page = crawler(download($law_list_url, $re_download || $this->re_download));
+            $first_page = crawler(download($law_list_url, [
+                're_download' => $re_download || $this->re_download,
+                'save' => $date != date('Y-m-d')
+            ]));
             $last_pager_link = $first_page->filterXPath('//*[@id="page"]/div[2]/table/tbody/tr[1]/td[3]/div/div[2]/span/a[last()]');
             $page_count = $last_pager_link->count() ? preg_replace('/(.*?)([0-9]+)$/', '$2', $last_pager_link->attr('href')) : 1;
             for ($i = 1; $i <= $page_count; $i++) {
-                $this->jobsManager->add('discover_command', 'discoverDailyLawListPage', ['law_list_url' => $law_list_url . ($i > 1 ? $i : ''), $i, 're_download' => $re_download], 'discover');
+                $this->jobsManager->add('discover_command', 'discoverDailyLawListPage', [
+                    'law_list_url' => $law_list_url . ($i > 1 ? $i : ''),
+                    'date' => $date,
+                    'page_num' => $i,
+                    're_download' => $re_download
+                ], 'discover');
             }
         } catch (Exception $e) {
             _log($e->getMessage(), 'red');
@@ -132,13 +145,17 @@ class DiscoverCommand extends Console\Command\Command
      * Crawl the law list page. Take all law urls from it and add them to database.
      *
      * @param string $law_list_url Law list URL.
+     * @param string $date
      * @param int $page_num
      * @param bool $re_download
      */
-    public function discoverDailyLawListPage($law_list_url, $page_num, $re_download = false)
+    public function discoverDailyLawListPage($law_list_url, $page_num, $date, $re_download = false)
     {
         try {
-            $list_page = crawler(download($law_list_url, $page_num > 1 ? ($re_download || $this->re_download) : false));
+            $list_page = crawler(download($law_list_url, [
+                're_download' => $page_num > 1 ? ($re_download || $this->re_download) : false,
+                'save' => $date != date('Y-m-d')
+            ]));
             $list_page->filterXPath('//*[@id="page"]/div[2]/table/tbody/tr[1]/td[3]/div/dl/dd/ol/li')
                 ->each(
                     function (\Symfony\Component\DomCrawler\Crawler $node) {
