@@ -8,20 +8,20 @@ class CleanupCommand extends Console\Command\Command
 {
 
     /**
-     * @var \ShvetsGroup\Service\Jobs
+     * @var \ShvetsGroup\Service\JobsManager
      */
-    private $jobs;
+    private $jobsManager;
 
     /**
-     * @param \ShvetsGroup\Service\Jobs $jobs
+     * @param \ShvetsGroup\Service\JobsManager $jobsManager
      */
-    public function __construct($jobs)
+    public function __construct($jobsManager)
     {
         parent::__construct('cleanup');
 
         $this->setDescription('Cleanup jobs pool.');
 
-        $this->jobs = $jobs;
+        $this->jobsManager = $jobsManager;
     }
 
     /**
@@ -35,7 +35,7 @@ class CleanupCommand extends Console\Command\Command
      */
     protected function execute(Console\Input\InputInterface $input, Console\Output\OutputInterface $output)
     {
-        $this->jobs->cleanup();
+        $this->jobsManager->cleanup();
 
         return true;
     }

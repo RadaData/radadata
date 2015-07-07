@@ -2,7 +2,7 @@
 
 namespace ShvetsGroup\Command;
 
-use ShvetsGroup\Service\Jobs;
+use ShvetsGroup\Service\JobsManager;
 use ShvetsGroup\Service\Proxy;
 use Symfony\Component\Console as Console;
 
@@ -24,9 +24,9 @@ class CronCommand extends Console\Command\Command
     private $downloader;
 
     /**
-     * @var Jobs
+     * @var JobsManager
      */
-    private $jobs;
+    private $jobsManager;
 
     /**
      * @var Proxy
@@ -36,10 +36,10 @@ class CronCommand extends Console\Command\Command
     /**
      * @param DiscoverCommand $discoverer
      * @param DownloadCommand $downloader
-     * @param Jobs  $jobs
+     * @param JobsManager  $jobsManager
      * @param Proxy $proxy
      */
-    public function __construct($discoverer, $downloader, $jobs, $proxy)
+    public function __construct($discoverer, $downloader, $jobsManager, $proxy)
     {
         parent::__construct('cron');
 
@@ -47,7 +47,7 @@ class CronCommand extends Console\Command\Command
 
         $this->discoverer = $discoverer;
         $this->downloader = $downloader;
-        $this->jobs = $jobs;
+        $this->jobsManager = $jobsManager;
         $this->proxy = $proxy;
     }
 
@@ -69,7 +69,7 @@ class CronCommand extends Console\Command\Command
             $this->proxy->makeProxiesOrDie($this->workers);
         }
 
-        if (!$this->jobs->count()) {
+        if (!$this->jobsManager->count()) {
             $this->discoverer->discoverNewLaws();
             $this->downloader->downloadNewLaws();
             // Download cards
@@ -78,6 +78,6 @@ class CronCommand extends Console\Command\Command
             // Dump files to DB
             // Parse cards
         }
-        $this->jobs->launch($this->workers);
+        $this->jobsManager->launch($this->workers);
     }
 }

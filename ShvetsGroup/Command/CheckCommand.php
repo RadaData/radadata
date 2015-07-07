@@ -9,15 +9,15 @@ class CheckCommand extends Console\Command\Command
 {
 
     /**
-     * @var \ShvetsGroup\Service\Jobs
+     * @var \ShvetsGroup\Service\JobsManager
      */
-    private $jobs;
+    private $jobsManager;
 
     /**
      * @param string   $downloadsDir
-     * @param \ShvetsGroup\Service\Jobs $jobs
+     * @param \ShvetsGroup\Service\JobsManager $jobsManager
      */
-    public function __construct($downloadsDir, $jobs)
+    public function __construct($downloadsDir, $jobsManager)
     {
         parent::__construct('check');
 
@@ -25,7 +25,7 @@ class CheckCommand extends Console\Command\Command
         $this->addOption('fix', 'f', Console\Input\InputOption::VALUE_NONE, 'Try to fix all problems.');
 
         $this->downloadsDir = BASE_PATH . $downloadsDir;
-        $this->jobs = $jobs;
+        $this->jobsManager = $jobsManager;
     }
 
     /**

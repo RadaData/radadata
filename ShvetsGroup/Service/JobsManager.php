@@ -3,8 +3,10 @@
 namespace ShvetsGroup\Service;
 
 use \Symfony\Component\DependencyInjection\ContainerAware;
+use Illuminate\Database\Capsule\Manager as DB;
+use ShvetsGroup\Model\Job;
 
-class Jobs extends ContainerAware
+class JobsManager extends ContainerAware
 {
 
     /**
@@ -40,7 +42,7 @@ class Jobs extends ContainerAware
 
         if ($real_workers_count == 1) {
             while ($job = $this->fetch($group, $service, $method)) {
-                $this->execute($job);
+                $job->execute($this->container);
             }
         } else {
             $child = 0;
@@ -57,8 +59,7 @@ class Jobs extends ContainerAware
                 }
 
                 $child++;
-                close_db('db');
-                close_db('misc');
+                DB::connection()->disconnect();
 
                 $pid = pcntl_fork();
 
@@ -74,8 +75,7 @@ class Jobs extends ContainerAware
                     }
                 } // Worker.
                 else {
-                    $this->execute($job);
-                    $this->proxy->releaseProxy();
+                    $job->execute($this->container);
                     exit;
                 }
             }
@@ -102,56 +102,24 @@ class Jobs extends ContainerAware
      */
     public function fetch($group = null, $service = null, $method = null)
     {
-        $db = db('db');
-        $db->beginTransaction();
-        $sql = "SELECT * FROM jobs WHERE claimed IS NULL" . ($group ? " AND `group` = :group" : '') . ($service ? " AND `service` = :service" : '') . ($method ? " AND `method` = :method" : '') . " ORDER BY id LIMIT 1 FOR UPDATE";
-        $query = $db->prepare($sql);
-        if ($group) {
-            $query->bindParam(':group', $group);
-        }
-        if ($service) {
-            $query->bindParam(':service', $service);
-        }
-        if ($method) {
-            $query->bindParam(':method', $method);
-        }
-        $query->execute();
-        $row = $query->fetch();
-        $db->prepare("UPDATE jobs SET claimed = :claimed WHERE id = :id;")->execute([
-            ':claimed' => time(),
-            ':id'      => $row['id']
-        ]);
-        $db->commit();
+        $job = null;
 
-        if ($row) {
-            $job = [
-                'id'         => $row['id'],
-                'service'    => $row['service'],
-                'method'     => $row['method'],
-                'parameters' => unserialize($row['parameters']),
-                'group'      => $row['group'],
-            ];
+        DB::connection()->transaction(function() use ($group, $service, $method, &$job) {
+            $query = Job::whereNull('claimed')->orderBy('job_id');
+            if ($group) {
+                $query->where('group', $group);
+            }
+            if ($service) {
+                $query->where('service', $service);
+            }
+            if ($method) {
+                $query->where('method', $method);
+            }
+            $job = $query->first();
+            $job->update(['claimed' => time()]);
+        });
 
-            return $job;
-        }
-    }
-
-    /**
-     * Execute a job.
-     *
-     * @param $job
-     */
-    private function execute($job)
-    {
-        if ($job['service']) {
-            $object = $this->container->get($job['service']);
-            $func = [$object, $job['method']];
-        } else {
-            $func = $job['method'];
-        }
-        call_user_func_array($func, $job['parameters']);
-
-        db('db')->prepare("DELETE FROM jobs WHERE id = :id")->execute([':id' => $job['id']]);
+        return $job;
     }
 
     /**
@@ -167,15 +135,7 @@ class Jobs extends ContainerAware
      */
     public function add($service, $method, $parameters, $group)
     {
-        $serialized_parameters = serialize($parameters);
-
-        $stmt = db('db')->prepare("INSERT INTO jobs (service, method, parameters, `group`) VALUES (:service, :method, :parameters, :group);");
-        $stmt->bindParam(':service', $service);
-        $stmt->bindParam(':method', $method);
-        $stmt->bindParam(':parameters', $serialized_parameters);
-        $stmt->bindParam(':group', $group);
-
-        return $stmt->execute();
+        Job::create(['service' => $service, 'method' => $method , 'parameters' => $parameters, 'group' => $group]);
     }
 
     /**
@@ -185,7 +145,7 @@ class Jobs extends ContainerAware
      */
     public function deleteAll($group)
     {
-        db('db')->exec("DELETE FROM jobs WHERE `group` = '" . $group . "'");
+        Job::where('group', $group)->delete();
     }
 
     /**
@@ -193,7 +153,7 @@ class Jobs extends ContainerAware
      */
     public function cleanup()
     {
-        db('db')->prepare("UPDATE jobs SET claimed = NULL WHERE claimed IS NOT NULL")->execute([]);
+        Job::whereNotNull('claimed')->update(['claimed' => null]);
     }
 
     /**
@@ -201,7 +161,7 @@ class Jobs extends ContainerAware
      */
     public function count()
     {
-        return db('db')->query("SELECT COUNT(*) FROM jobs")->fetchColumn();
+        return Job::count();
     }
 
 }

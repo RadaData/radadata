@@ -7,23 +7,23 @@ use Symfony\Component\Console as Console;
 class StatusCommand extends Console\Command\Command
 {
     /**
-     * @var \ShvetsGroup\Service\Jobs
+     * @var \ShvetsGroup\Service\JobsManager
      */
-    private $jobs;
+    private $jobsManager;
 
     /**
      * @param string   $downloadsDir
-     * @param \ShvetsGroup\Service\Jobs $jobs
+     * @param \ShvetsGroup\Service\JobsManager $jobsManager
      * @param \ShvetsGroup\Service\Proxy $proxy
      */
-    public function __construct($downloadsDir, $jobs, $proxy)
+    public function __construct($downloadsDir, $jobsManager, $proxy)
     {
         parent::__construct('status');
 
         $this->setDescription('Get the full status report.');
 
         $this->downloadsDir = BASE_PATH . $downloadsDir;
-        $this->jobs = $jobs;
+        $this->jobsManager = $jobsManager;
         $this->proxy = $proxy;
     }
 

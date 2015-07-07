@@ -9,18 +9,18 @@ class DownloadCommand extends Console\Command\Command
 {
 
     /**
-     * @var \ShvetsGroup\Service\Jobs
+     * @var \ShvetsGroup\Service\JobsManager
      */
-    private $jobs;
+    private $jobsManager;
 
     private $reset = false;
 
     private $re_download = false;
 
     /**
-     * @param \ShvetsGroup\Service\Jobs $jobs
+     * @param \ShvetsGroup\Service\JobsManager $jobsManager
      */
-    public function __construct($jobs)
+    public function __construct($jobsManager)
     {
         parent::__construct('download');
 
@@ -28,7 +28,7 @@ class DownloadCommand extends Console\Command\Command
         $this->addOption('reset', 'r', Console\Input\InputOption::VALUE_NONE, 'Reset the download jobs pool and fill it with download jobs for NOT DOWNLOADED laws.');
         $this->addOption('download', 'd', Console\Input\InputOption::VALUE_NONE, 'Re-download any page from the live website.');
 
-        $this->jobs = $jobs;
+        $this->jobsManager = $jobsManager;
     }
 
     /**
@@ -48,7 +48,7 @@ class DownloadCommand extends Console\Command\Command
         if ($this->reset) {
             $this->downloadNewLaws();
         }
-        $this->jobs->launch(50, 'download');
+        $this->jobsManager->launch(50, 'download');
 
         return true;
     }
@@ -58,19 +58,19 @@ class DownloadCommand extends Console\Command\Command
      */
     function downloadNewLaws()
     {
-        $this->jobs->deleteAll('download');
+        $this->jobsManager->deleteAll('download');
 
         // TODO: CHUNKS
         foreach (Law::where('status', Law::NOT_DOWNLOADED)->get() as $law) {
-            $this->jobs->add('download_command', 'downloadCard', ['law_id' => $law->law_id], 'download');
+            $this->jobsManager->add('download_command', 'downloadCard', ['law_id' => $law->law_id], 'download');
         }
 
         foreach (Law::where('status', Law::DOWNLOADED_CARD)->get() as $law) {
-            $this->jobs->add('download_command', 'downloadRevisions', ['law_id' => $law->law_id], 'download');
+            $this->jobsManager->add('download_command', 'downloadRevisions', ['law_id' => $law->law_id], 'download');
         }
 
         foreach (Law::where('status', Law::DOWNLOADED_REVISIONS)->get() as $law) {
-            $this->jobs->add('download_command', 'downloadRelations', ['law_id' => $law->law_id], 'download');
+            $this->jobsManager->add('download_command', 'downloadRelations', ['law_id' => $law->law_id], 'download');
         }
     }
 
@@ -81,9 +81,9 @@ class DownloadCommand extends Console\Command\Command
      */
     function downloadLaw($law_id)
     {
-        $this->jobs->add('download_command', 'downloadCard', ['id' => $law_id], 'download');
-        $this->jobs->add('download_command', 'downloadRevisions', ['id' => $law_id], 'download');
-        $this->jobs->add('download_command', 'downloadRelations', ['id' => $law_id], 'download');
+        $this->jobsManager->add('download_command', 'downloadCard', ['id' => $law_id], 'download');
+        $this->jobsManager->add('download_command', 'downloadRevisions', ['id' => $law_id], 'download');
+        $this->jobsManager->add('download_command', 'downloadRelations', ['id' => $law_id], 'download');
     }
 
     /**

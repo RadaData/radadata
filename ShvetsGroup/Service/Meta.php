@@ -2,6 +2,8 @@
 
 namespace ShvetsGroup\Service;
 
+use Illuminate\Database\Capsule\Manager as DB;
+
 class Meta
 {
 
@@ -18,7 +20,7 @@ class Meta
     /**
      * Get associate array of all issuers.
      *
-     * @return array['name']
+     * @return object['name']
      *              ['issuer_id']  string
      *              ['name']       string
      *              ['full_name']  string
@@ -29,9 +31,10 @@ class Meta
     public function getIssuers()
     {
         $issuers = [];
-        $db_issuers = db('db')->query('SELECT * FROM issuers')->fetchAll();
+
+        $db_issuers = DB::table('issuers')->get();
         foreach ($db_issuers as $issuer) {
-            $issuers[$issuer['name']] = $issuer;
+            $issuers[$issuer->name] = $issuer;
         }
 
         return $issuers;
@@ -44,16 +47,16 @@ class Meta
      */
     public function setIssuers(array $issuers)
     {
+        DB::table('issuers')->delete();
         foreach ($issuers as $issuer) {
-            $sql = "INSERT IGNORE INTO issuers (issuer_id, name, full_name, group_name, website, url) VALUES (:issuer_id, :name, :full_name, :group_name, :website, :url)";
-            $q = db('db')->prepare($sql);
-            $q->execute([':issuer_id'  => $issuer['issuer_id'],
-                         ':name'       => $issuer['name'],
-                         ':full_name'  => $issuer['full_name'],
-                         ':group_name' => $issuer['group_name'],
-                         ':website'    => $issuer['website'],
-                         ':url'        => $issuer['url']
-            ]);
+            DB::table('issuers')->insert(
+                ['issuer_id'  => $issuer->issuer_id,
+                 'name'       => $issuer->name,
+                 'full_name'  => $issuer->full_name,
+                 'group_name' => $issuer->group_name,
+                 'website'    => $issuer->website,
+                 'url'        => $issuer->url]
+            );
         }
     }
 
@@ -64,10 +67,11 @@ class Meta
      */
     public function setTypes(array $types)
     {
+        DB::table('types')->delete();
         foreach ($types as $type) {
-            $sql = "INSERT IGNORE INTO types (type_id, name) VALUES (:type_id, :name)";
-            $q = db('db')->prepare($sql);
-            $q->execute([':type_id'  => $type['type_id'], ':name' => $type['name']]);
+            DB::table('types')->insert(
+                ['type_id'  => $type->type_id, 'name' => $type->name]
+            );
         }
     }
 
@@ -78,10 +82,11 @@ class Meta
      */
     public function setStates(array $states)
     {
+        DB::table('states')->delete();
         foreach ($states as $state) {
-            $sql = "INSERT IGNORE INTO states (state_id, name) VALUES (:state_id, :name)";
-            $q = db('db')->prepare($sql);
-            $q->execute([':state_id'  => $state['state_id'], ':name' => $state['name']]);
+            DB::table('states')->insert(
+                ['state_id'  => $state->state_id, 'name' => $state->name]
+            );
         }
     }
 
@@ -110,21 +115,21 @@ class Meta
                         }
                     } elseif ($cells->count() == 4) {
                         $issuer_link = $node->filterXPath('//td[2]/a');
-                        $issuer = [];
-                        $issuer['url'] = $issuer_link->attr('href');
-                        $issuer['issuer_id'] = str_replace('/laws/main/', '', $issuer['url']);
-                        $issuer['group_name'] = $group;
-                        $issuer['name'] = better_trim($issuer_link->text());
-                        $issuer['full_name'] = null;
-                        if (preg_match('|(.*?)(:? \((.*?)\))?$|', $issuer['name'], $match)) {
+                        $issuer = new \stdClass();
+                        $issuer->url = $issuer_link->attr('href');
+                        $issuer->issuer_id = str_replace('/laws/main/', '', $issuer->url);
+                        $issuer->group_name = $group;
+                        $issuer->name = better_trim($issuer_link->text());
+                        $issuer->full_name = null;
+                        if (preg_match('|(.*?)(:? \((.*?)\))?$|', $issuer->name, $match)) {
                             if (isset($match[2])) {
-                                $issuer['name'] = $match[2];
-                                $issuer['full_name'] = $match[1];
+                                $issuer->name = $match[2];
+                                $issuer->full_name = $match[1];
                             }
                         }
-                        $issuer['website'] = $issuer_link->count() == 2 ? $issuer_link->last()->attr('href') : null;
-                        $issuer['international'] = $i;
-                        $issuers[$issuer['name']] = $issuer;
+                        $issuer->website = $issuer_link->count() == 2 ? $issuer_link->last()->attr('href') : null;
+                        $issuer->international = $i;
+                        $issuers[$issuer->name] = $issuer;
                     }
                 }
             );
@@ -138,11 +143,11 @@ class Meta
                 $cells = $node->filterXPath('//td');
                 if ($cells->count() == 4) {
                     $type_link = $node->filterXPath('//td[2]/a');
-                    $type = [];
-                    $type['url'] = $type_link->attr('href');
-                    $type['type_id'] = str_replace('/laws/main/', '', $type['url']);
-                    $type['name'] = better_trim($type_link->text());
-                    $types[$type['name']] = $type;
+                    $type = new \stdClass();
+                    $type->url = $type_link->attr('href');
+                    $type->type_id = str_replace('/laws/main/', '', $type->url);
+                    $type->name = better_trim($type_link->text());
+                    $types[$type->name] = $type;
                 }
             }
         );
@@ -155,11 +160,11 @@ class Meta
                 $cells = $node->filterXPath('//td');
                 if ($cells->count() == 4) {
                     $state_link = $node->filterXPath('//td[2]/a');
-                    $state = [];
-                    $state['url'] = $state_link->attr('href');
-                    $state['state_id'] = str_replace('/laws/main/', '', $state['url']);
-                    $state['name'] = better_trim($state_link->text());
-                    $states[$state['name']] = $state;
+                    $state = new \stdClass();
+                    $state->url = $state_link->attr('href');
+                    $state->state_id = str_replace('/laws/main/', '', $state->url);
+                    $state->name = better_trim($state_link->text());
+                    $states[$state->name] = $state;
                 }
             }
         );

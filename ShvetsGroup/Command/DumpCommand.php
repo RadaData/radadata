@@ -2,28 +2,29 @@
 
 namespace ShvetsGroup\Command;
 
+use Illuminate\Database\Capsule\Manager as DB;
 use ShvetsGroup\Model\Law;
 use Symfony\Component\Console as Console;
 
 class DumpCommand extends Console\Command\Command
 {
     /**
-     * @var \ShvetsGroup\Service\Jobs
+     * @var \ShvetsGroup\Service\JobsManager
      */
-    private $jobs;
+    private $jobsManager;
 
     /**
      * @param string   $downloadsDir
-     * @param \ShvetsGroup\Service\Jobs $jobs
+     * @param \ShvetsGroup\Service\JobsManager $jobsManager
      */
-    public function __construct($downloadsDir, $jobs)
+    public function __construct($downloadsDir, $jobsManager)
     {
         parent::__construct('dump');
 
         $this->setDescription('Move all downloaded files to database.');
 
         $this->downloadsDir = BASE_PATH . $downloadsDir;
-        $this->jobs = $jobs;
+        $this->jobsManager = $jobsManager;
     }
 
     /**
@@ -53,13 +54,9 @@ class DumpCommand extends Console\Command\Command
                 $download_date = date('Y-m-d H:i:s', filemtime($file_path));
                 $text = file_get_contents($file_path);
 
-                db('db')->prepare("INSERT IGNORE INTO laws_raw (law_id, file, download_date, text) VALUES (:law_id, :file, :download_date, :text)")
-                    ->execute([
-                        ':law_id' => $law_id,
-                        ':file' => $file,
-                        ':download_date' => $download_date,
-                        ':text' => $text
-                    ]);
+                DB::table('laws_raw')->insert(
+                    ['law_id' => $law_id, 'file' => $file, 'download_date' => $download_date, 'text' => $text]
+                );
                 Law::find($law_id)->update(['status' => Law::SAVED]);
             }
 

@@ -10,9 +10,9 @@ class DiscoverCommand extends Console\Command\Command
 {
 
     /**
-     * @var \ShvetsGroup\Service\Jobs
+     * @var \ShvetsGroup\Service\JobsManager
      */
-    private $jobs;
+    private $jobsManager;
 
     /**
      * @var \ShvetsGroup\Service\Meta
@@ -24,10 +24,10 @@ class DiscoverCommand extends Console\Command\Command
     private $re_download = false;
 
     /**
-     * @param \ShvetsGroup\Service\Jobs $jobs
+     * @param \ShvetsGroup\Service\JobsManager $jobsManager
      * @param \ShvetsGroup\Service\Meta $meta
      */
-    public function __construct($jobs, $meta)
+    public function __construct($jobsManager, $meta)
     {
         parent::__construct('discover');
 
@@ -37,7 +37,7 @@ class DiscoverCommand extends Console\Command\Command
         $this->addOption('reset_meta', 'm', Console\Input\InputOption::VALUE_NONE, 'Reset the law meta cache (issuers, types, etc.)');
         $this->addOption('download', 'd', Console\Input\InputOption::VALUE_NONE, 'Re-download any page from the live website.');
 
-        $this->jobs = $jobs;
+        $this->jobsManager = $jobsManager;
         $this->meta = $meta;
     }
 
@@ -62,8 +62,8 @@ class DiscoverCommand extends Console\Command\Command
 
         $this->discoverNewLaws($this->reset);
 
-        $this->jobs->launch(50, 'discover', 'discover_command', 'discoverDailyLawList');
-        $this->jobs->launch(50, 'discover', 'discover_command', 'discoverDailyLawListPage');
+        $this->jobsManager->launch(50, 'discover', 'discover_command', 'discoverDailyLawList');
+        $this->jobsManager->launch(50, 'discover', 'discover_command', 'discoverDailyLawListPage');
 
         return true;
     }
@@ -92,20 +92,20 @@ class DiscoverCommand extends Console\Command\Command
      */
     protected function addLawListJobs($starting_date = null, $re_download = false)
     {
-        $this->jobs->deleteAll('discover');
+        $this->jobsManager->deleteAll('discover');
 
         $date = strtotime($starting_date ?: '1991-01-01 00:00:00');
 
         if ($date <= strtotime('1991-01-01 00:00:00')) {
-            $this->jobs->add('discover_command', 'discoverDailyLawList', ['law_list_url' => '/laws/main/ay1990/page'], 'discover');
+            $this->jobsManager->add('discover_command', 'discoverDailyLawList', ['law_list_url' => '/laws/main/ay1990/page'], 'discover');
         }
 
         while ($date < strtotime('midnight')) {
-            $this->jobs->add('discover_command', 'discoverDailyLawList', ['law_list_url' => '/laws/main/a' . date('Ymd', $date) . '/sp5/page', 're_download' => $re_download], 'discover');
+            $this->jobsManager->add('discover_command', 'discoverDailyLawList', ['law_list_url' => '/laws/main/a' . date('Ymd', $date) . '/sp5/page', 're_download' => $re_download], 'discover');
             $date = strtotime(date('c', $date) . '+1 day');
         }
 
-        $this->jobs->add('discover_command', 'discoverDailyLawList', ['law_list_url' => '/laws/main/a' . date('Ymd') . '/sp5/page', 're_download' => $re_download], 'discover');
+        $this->jobsManager->add('discover_command', 'discoverDailyLawList', ['law_list_url' => '/laws/main/a' . date('Ymd') . '/sp5/page', 're_download' => $re_download], 'discover');
     }
 
     /**
@@ -121,7 +121,7 @@ class DiscoverCommand extends Console\Command\Command
             $last_pager_link = $first_page->filterXPath('//*[@id="page"]/div[2]/table/tbody/tr[1]/td[3]/div/div[2]/span/a[last()]');
             $page_count = $last_pager_link->count() ? preg_replace('/(.*?)([0-9]+)$/', '$2', $last_pager_link->attr('href')) : 1;
             for ($i = 1; $i <= $page_count; $i++) {
-                $this->jobs->add('discover_command', 'discoverDailyLawListPage', ['law_list_url' => $law_list_url . ($i > 1 ? $i : ''), $i, 're_download' => $re_download], 'discover');
+                $this->jobsManager->add('discover_command', 'discoverDailyLawListPage', ['law_list_url' => $law_list_url . ($i > 1 ? $i : ''), $i, 're_download' => $re_download], 'discover');
             }
         } catch (Exception $e) {
             _log($e->getMessage(), 'red');
@@ -152,7 +152,7 @@ class DiscoverCommand extends Console\Command\Command
                         $date = date_format(date_create_from_format('d.m.Y', $raw_date), 'Y-m-d');
 
                         Law::updateOrCreate(['law_id' => $law_id, 'date' => $date]);
-                        $this->jobs->add('download_command', 'downloadLaw', ['law_id' => $law_id], 'download');
+                        $this->jobsManager->add('download_command', 'downloadLaw', ['law_id' => $law_id], 'download');
                     }
                 );
 

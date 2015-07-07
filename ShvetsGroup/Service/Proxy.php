@@ -22,7 +22,7 @@ class Proxy
 
     public function __construct()
     {
-        $this->ec2Client = Ec2Client::factory(aws());
+        $this->ec2Client = new Ec2Client(aws());
     }
 
     public function killAll()
@@ -96,7 +96,7 @@ class Proxy
             ]);
             $this->establishConnections();
         }
-        catch (Aws\Common\Exception\RuntimeException $e) {
+        catch (\Exception $e) {
             _log('makeProxiesOrDie: ' . $e->getMessage(), 'red');
             $this->proxy->killAll();
             die();
@@ -132,7 +132,7 @@ class Proxy
 
             return $instanceIds;
         }
-        catch (Aws\Common\Exception\RuntimeException $e) {
+        catch (\Exception $e) {
             _log('makeSpotRequests: ' . $e->getMessage(), 'red');
             $this->proxy->killAll();
             die();
@@ -182,10 +182,6 @@ class Proxy
      */
     public function releaseProxy()
     {
-        db('misc')->prepare("UPDATE proxies SET last_used = :time WHERE proxy = :proxy;")->execute([
-            ':time'  => 0,
-            ':proxy' => $this->proxy
-        ]);
         $this->proxy = null;
     }
 
@@ -236,7 +232,6 @@ class Proxy
     private function dropConnections()
     {
         exec('pkill -f "ssh -o UserKnownHostsFile"');
-        db('misc')->exec('DELETE FROM proxies');
     }
 
     /**
@@ -262,10 +257,7 @@ class Proxy
     private function saveProxy($proxy_port)
     {
         $proxy = '127.0.0.1:' . $proxy_port;
-        $this->proxies[] = $proxy;
-
-        db('misc')->prepare('INSERT INTO proxies (proxy, last_used) VALUES (:proxy, 0)')
-            ->execute([':proxy' => $proxy]);
+        $this->proxies[$proxy] = 0;
     }
 
     /**
@@ -276,24 +268,15 @@ class Proxy
      */
     private function selectProxy()
     {
-        $db = db('misc');
-        $db->beginTransaction();
-        $sql = "SELECT proxy FROM proxies ORDER BY last_used ASC LIMIT 1";
-        $query = $db->prepare($sql);
-        $query->execute();
-        $proxy = $query->fetchColumn();
-        $db->prepare("UPDATE proxies SET last_used = :time WHERE proxy = :proxy;")->execute([
-            ':time'  => time(),
-            ':proxy' => $proxy
-        ]);
-        $db->commit();
-
-        if (!$proxy) {
+        if (empty($this->proxies)) {
             throw new \Exception('No available proxy.');
         }
 
-        $this->proxy = $proxy;
+        $this->proxies = sort($this->proxies);
+        reset($this->proxies);
+        $this->proxy = key($this->proxies);
+        $this->proxies[$this->proxy] = time();
 
-        return $proxy;
+        return $this->proxy;
     }
 }

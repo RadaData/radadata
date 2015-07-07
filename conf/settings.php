@@ -11,15 +11,6 @@ $conf['db'] = [
     'driver'   => 'mysql',
     'prefix'   => '',
 ];
-$conf['misc'] = [
-    'database' => 'radadata_misc',
-    'username' => 'root',
-    'password' => 'root',
-    'host'     => 'localhost',
-    'port'     => '3306',
-    'driver'   => 'mysql',
-    'prefix'   => '',
-];
 $conf['phantomjs'] = '/usr/local/bin/phantomjs';
 
 $conf['aws'] = [

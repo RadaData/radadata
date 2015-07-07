@@ -5,8 +5,8 @@ services:
     meta:
         class:     \ShvetsGroup\Service\Meta
 
-    jobs:
-        class:     \ShvetsGroup\Service\Jobs
+    jobs_manager:
+        class:     \ShvetsGroup\Service\JobsManager
         arguments: [ @proxy ]
         calls:
           - [ setContainer, [ @service_container ] ]
@@ -23,29 +23,29 @@ services:
 
     status_command:
        class:     \ShvetsGroup\Command\StatusCommand
-       arguments: [ '%downloads_dir%', @jobs, @proxy ]
+       arguments: [ '%downloads_dir%', @jobs_manager, @proxy ]
 
     discover_command:
         class:     \ShvetsGroup\Command\DiscoverCommand
-        arguments: [ @jobs, @meta ]
+        arguments: [ @jobs_manager, @meta ]
 
     download_command:
        class:     \ShvetsGroup\Command\DownloadCommand
-       arguments: [ @jobs ]
+       arguments: [ @jobs_manager ]
 
     check_command:
        class:     \ShvetsGroup\Command\CheckCommand
-       arguments: [ '%downloads_dir%', @jobs ]
+       arguments: [ '%downloads_dir%', @jobs_manager ]
 
     dump_command:
        class:     \ShvetsGroup\Command\DumpCommand
-       arguments: [ '%downloads_dir%', @jobs ]
+       arguments: [ '%downloads_dir%', @jobs_manager ]
 
     cleanup_command:
        class:     \ShvetsGroup\Command\CleanupCommand
-       arguments: [ @jobs ]
+       arguments: [ @jobs_manager ]
 
     cron_command:
        class:     \ShvetsGroup\Command\CronCommand
-       arguments: [ @discover_command, @download_command, @jobs, @proxy ]
+       arguments: [ @discover_command, @download_command, @jobs_manager, @proxy ]
 
