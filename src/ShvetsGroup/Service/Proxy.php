@@ -40,8 +40,11 @@ class Proxy
         $this->useProxy = $useProxy;
     }
 
-    public function useProxy()
+    public function useProxy($forceUseProxy = null)
     {
+        if ($forceUseProxy) {
+            $this->useProxy = true;
+        }
         return $this->useProxy;
     }
 

@@ -1,6 +1,6 @@
 parameters:
     downloads_dir: '../downloads'
-    use_proxy: 1
+    use_proxy: 0
     db:
       database: radadata
       username: root

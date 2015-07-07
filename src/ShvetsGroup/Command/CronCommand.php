@@ -11,7 +11,7 @@ class CronCommand extends Console\Command\Command
     /**
      * @var int
      */
-    private $workers = 20;
+    private $workers = 10;
 
     /**
      * @var DiscoverCommand
@@ -45,6 +45,7 @@ class CronCommand extends Console\Command\Command
 
         $this->setDescription('Cron runner.');
         $this->addOption('single', 's', Console\Input\InputOption::VALUE_NONE, 'Run single instance of the script (old instances will be terminated).');
+        $this->addOption('proxy', 'p', Console\Input\InputOption::VALUE_OPTIONAL, 'Whether or not to use proxy servers and how much proxies to create.');
 
         $this->discoverer = $discoverer;
         $this->downloader = $downloader;
@@ -67,12 +68,17 @@ class CronCommand extends Console\Command\Command
             exec('pkill -f " console.php cron"');
         }
 
-        //if ($this->proxy->useProxy()) {
-        //    // Cron command should re-launch new proxies, because existing proxies might be already banned by rada since
-        //    // the last run.
-        //    $this->proxy->killAll();
-        //    $this->proxy->makeProxiesOrDie($this->workers);
-        //}
+        if ($input->getOption('proxy')) {
+            $this->workers = $input->getOption('proxy');
+            $this->proxy->useProxy(true);
+        }
+
+        if ($this->proxy->useProxy()) {
+            // Cron command should re-launch new proxies, because existing proxies might be already banned by rada since
+            // the last run.
+            $this->proxy->killAll();
+            $this->proxy->makeProxiesOrDie($this->workers);
+        }
 
         if (!$this->jobsManager->count()) {
             $this->discoverer->discoverNewLaws();
