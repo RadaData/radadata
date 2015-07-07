@@ -60,18 +60,21 @@ class DownloadCommand extends Console\Command\Command
     {
         $this->jobsManager->deleteAll('download');
 
-        // TODO: CHUNKS
-        foreach (Law::where('status', Law::NOT_DOWNLOADED)->get() as $law) {
-            $this->jobsManager->add('download_command', 'downloadCard', ['id' => $law->id], 'download');
-        }
-
-        foreach (Law::where('status', Law::DOWNLOADED_CARD)->get() as $law) {
-            $this->jobsManager->add('download_command', 'downloadRevisions', ['id' => $law->id], 'download');
-        }
-
-        foreach (Law::where('status', Law::DOWNLOADED_REVISIONS)->get() as $law) {
-            $this->jobsManager->add('download_command', 'downloadRelations', ['id' => $law->id], 'download');
-        }
+        Law::where('status', Law::NOT_DOWNLOADED)->chunk(200, function($laws) {
+            foreach ($laws as $law) {
+                $this->jobsManager->add('download_command', 'downloadCard', ['id' => $law->id], 'download');
+            }
+        });
+        Law::where('status', Law::DOWNLOADED_CARD)->chunk(200, function($laws) {
+            foreach ($laws as $law) {
+                $this->jobsManager->add('download_command', 'downloadRevisions', ['id' => $law->id], 'download');
+            }
+        });
+        Law::where('status', Law::DOWNLOADED_REVISIONS)->chunk(200, function($laws) {
+            foreach ($laws as $law) {
+                $this->jobsManager->add('download_command', 'downloadRelations', ['id' => $law->id], 'download');
+            }
+        });
     }
 
     /**

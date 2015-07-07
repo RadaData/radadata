@@ -48,11 +48,11 @@ class Proxy
     public function killAll()
     {
         $this->dropConnections();
-        $promises = [
-            'instances'     => $this->terminateInstances(),
-            'spot_requests' => $this->cancelSpotRequests()
-        ];
-        Promise\unwrap($promises);
+
+        $this->terminateInstances();
+        $this->cancelSpotRequests();
+
+        _log('Old proxies have been terminated.', 'green');
     }
 
     private function getProxyInstances($key = null)
@@ -77,11 +77,13 @@ class Proxy
     {
         $instance_ids = $this->getProxyInstances('InstanceId');
 
-        if (empty($instance_ids)) {
+        if (!$instance_ids) {
             return new Promise\FulfilledPromise(true);
         }
 
-        return $this->ec2Client->terminateInstancesAsync(['InstanceIds' => $instance_ids]);
+        _log('Terminating ' . count($instance_ids) . ' instances.');
+        $this->ec2Client->terminateInstances(['InstanceIds' => $instance_ids]);
+        $this->waitUntil('InstanceTerminated', ['InstanceIds' => $instance_ids]);
     }
 
     private function cancelSpotRequests()
@@ -93,11 +95,14 @@ class Proxy
         ]);
         $spot_request_ids = $result->getPath('SpotInstanceRequests[].SpotInstanceRequestId');
 
-        if (empty($spot_request_ids)) {
+        if (!$spot_request_ids) {
             return new Promise\FulfilledPromise(true);
         }
 
-        return $this->ec2Client->cancelSpotInstanceRequestsAsync(['SpotInstanceRequestIds' => $spot_request_ids]);
+        _log('Canceling ' . count($spot_request_ids) . ' spot requests.');
+        $this->ec2Client->cancelSpotInstanceRequests(['SpotInstanceRequestIds' => $spot_request_ids]);
+
+        $this->waitUntil('SpotInstanceRequestCanceled', ['SpotInstanceRequestIds' => $spot_request_ids]);
     }
 
     /**
@@ -108,17 +113,21 @@ class Proxy
         try {
             $instanceIds = $this->makeSpotRequests($count);
 
-            $this->ec2Client->waitUntil('InstanceRunning', [
+            _log('Waiting for ' . $count . ' instances to launch.');
+            $this->waitUntil('InstanceRunning', [
                 'InstanceIds' => $instanceIds,
             ]);
-            $this->ec2Client->waitUntil('InstanceStatusOk', [
+            $this->waitUntil('InstanceStatusOk', [
                 'InstanceIds' => $instanceIds,
             ]);
+            _log('' . $count . ' proxy instances have been launched.', 'green');
+
             $this->establishConnections();
-        }
-        catch (\Exception $e) {
+
+            _log('' . $count . ' proxy instances are ready.', 'green');
+        } catch (\Exception $e) {
             _log('makeProxiesOrDie: ' . $e->getMessage(), 'red');
-            $this->proxy->killAll();
+            $this->killAll();
             die();
         }
     }
@@ -126,35 +135,35 @@ class Proxy
     private function makeSpotRequests($count)
     {
         try {
+            _log('Requesting ' . $count . ' spot instances.');
             $result = $this->ec2Client->requestSpotInstances([
                 'InstanceCount'       => $count,
                 'LaunchSpecification' => [
-                    'ImageId' => 'ami-4a268b3d',
-                    'InstanceType' => 't1.micro',
-                    'KeyName' => 'AMI',
-                    'Monitoring' => [
+                    'ImageId'          => 'ami-4a268b3d',
+                    'InstanceType'     => 't1.micro',
+                    'KeyName'          => 'AMI',
+                    'Monitoring'       => [
                         'Enabled' => false,
                     ],
                     'SecurityGroupIds' => ['sg-f5a19481'],
                 ],
-                'SpotPrice' => '0.01'
+                'SpotPrice'           => '0.01'
             ]);
-            $spotRequestIds = $result->getPath('SpotInstanceRequests[].SpotInstanceRequestId');
+            $spot_request_ids = $result->getPath('SpotInstanceRequests[].SpotInstanceRequestId');
 
-            $this->ec2Client->waitUntil('SpotInstanceRequestFulfilled', [
-                'SpotInstanceRequestIds' => $spotRequestIds,
+            $this->waitUntil('SpotInstanceRequestFulfilled', [
+                'SpotInstanceRequestIds' => $spot_request_ids,
             ]);
 
             $result = $this->ec2Client->describeSpotInstanceRequests([
-                'SpotInstanceRequestIds' => $spotRequestIds
+                'SpotInstanceRequestIds' => $spot_request_ids
             ]);
             $instanceIds = $result->getPath('SpotInstanceRequests[].InstanceId');
 
             return $instanceIds;
-        }
-        catch (\Exception $e) {
+        } catch (\Exception $e) {
             _log('makeSpotRequests: ' . $e->getMessage(), 'red');
-            $this->proxy->killAll();
+            $this->killAll();
             die();
         }
     }
@@ -225,6 +234,7 @@ class Proxy
 
         $ips = $this->describeAvailableEC2Instances();
 
+        _log('Connecting to ' . count($ips) . ' proxy instances.');
         foreach ($ips as $ip) {
             $pid = pcntl_fork();
 
@@ -251,6 +261,7 @@ class Proxy
      */
     private function dropConnections()
     {
+        _log('Dropping old connections.');
         exec('pkill -f "ssh -o UserKnownHostsFile"');
     }
 
@@ -276,8 +287,7 @@ class Proxy
      */
     private function saveProxy($proxy_port)
     {
-        $proxy = '127.0.0.1:' . $proxy_port;
-        $this->proxies[$proxy] = 0;
+        $this->proxies[] = ['proxy' => '127.0.0.1:' . $proxy_port, 'claimed' => 0];
     }
 
     /**
@@ -288,15 +298,107 @@ class Proxy
      */
     private function selectProxy()
     {
-        if (empty($this->proxies)) {
+        if (!$this->proxies) {
             throw new \Exception('No available proxy.');
         }
 
-        $this->proxies = sort($this->proxies);
-        reset($this->proxies);
-        $this->proxy = key($this->proxies);
-        $this->proxies[$this->proxy] = time();
+        usort($this->proxies, function ($item1, $item2) {
+            if ($item1['claimed'] == $item2['claimed']) return 0;
+            return $item1['claimed'] < $item2['claimed'] ? -1 : 1;
+        });
+        $this->proxy = $this->proxies[0]['proxy'];
+        $this->proxies[0] = time();
 
         return $this->proxy;
+    }
+
+    /**
+     * Call which can handle custom waiters.
+     *
+     * @param $name
+     * @param $arg
+     *
+     * @throws \Exception
+     */
+    private function waitUntil($name, $arg)
+    {
+        if ($config = $this->customEc2WaiterConfig($name)) {
+            $waiter = new \Aws\Waiter($this->ec2Client, $name, $arg, $config);
+            $waiter->promise()->wait();
+        } else {
+            $this->ec2Client->waitUntil($name, $arg);
+        }
+    }
+
+    /**
+     * Custom EC2 waiter definitions.
+     *
+     * @param $name
+     *
+     * @return mixed
+     */
+    private function customEc2WaiterConfig($name)
+    {
+        $config = [
+            'SpotInstanceRequestCanceled'  => [
+                "operation"   => "DescribeSpotInstanceRequests",
+                "maxAttempts" => 40,
+                "delay"       => 15,
+                "acceptors"   => [
+                    [
+                        "state"    => "success",
+                        "matcher"  => "pathAll",
+                        "argument" => "SpotInstanceRequests[].State",
+                        "expected" => "cancelled"
+                    ]
+                ]
+            ],
+            'SpotInstanceRequestFulfilled' => [
+                'operation'   => 'DescribeSpotInstanceRequests',
+                'maxAttempts' => 40,
+                'delay'       => 15,
+                'acceptors'   => [
+                    [
+                        'state'    => 'success',
+                        'matcher'  => 'pathAll',
+                        'argument' => 'SpotInstanceRequests[].Status.Code',
+                        'expected' => 'fulfilled',
+                    ],
+                    [
+                        "matcher"  => "error",
+                        "expected" => "InvalidSpotInstanceRequestID.NotFound",
+                        "state"    => "retry"
+                    ],
+                    [
+                        'state'    => 'failure',
+                        'matcher'  => 'pathAny',
+                        'argument' => 'SpotInstanceRequests[].Status.Code',
+                        'expected' => 'schedule-expired',
+                    ],
+                    [
+                        'state'    => 'failure',
+                        'matcher'  => 'pathAny',
+                        'argument' => 'SpotInstanceRequests[].Status.Code',
+                        'expected' => 'canceled-before-fulfillment',
+                    ],
+                    [
+                        'state'    => 'failure',
+                        'matcher'  => 'pathAny',
+                        'argument' => 'SpotInstanceRequests[].Status.Code',
+                        'expected' => 'bad-parameters',
+                    ],
+                    [
+                        'state'    => 'failure',
+                        'matcher'  => 'pathAny',
+                        'argument' => 'SpotInstanceRequests[].Status.Code',
+                        'expected' => 'system-error',
+                    ]
+                ],
+            ]
+        ];
+
+        if (isset($config[$name])) {
+            return $config[$name];
+        }
     }
 }

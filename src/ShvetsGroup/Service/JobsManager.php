@@ -5,6 +5,7 @@ namespace ShvetsGroup\Service;
 use \Symfony\Component\DependencyInjection\ContainerAware;
 use Illuminate\Database\Capsule\Manager as DB;
 use ShvetsGroup\Model\Job;
+use ShvetsGroup\Service\Database as DBManager;
 
 class JobsManager extends ContainerAware
 {
@@ -59,13 +60,16 @@ class JobsManager extends ContainerAware
                 }
 
                 $child++;
-                DB::connection()->disconnect();
+
+                DBManager::disconnect();
 
                 $pid = pcntl_fork();
 
                 if ($pid == -1) {
                     throw new \Exception("Could not fork worker process.");
                 }
+
+                DBManager::connect();
 
                 // Parent process.
                 if ($pid) {
@@ -104,7 +108,7 @@ class JobsManager extends ContainerAware
     {
         $job = null;
 
-        DB::connection()->transaction(function() use ($group, $service, $method, &$job) {
+        DB::transaction(function() use ($group, $service, $method, &$job) {
             $query = Job::whereNull('claimed')->orderBy('id');
             if ($group) {
                 $query->where('group', $group);

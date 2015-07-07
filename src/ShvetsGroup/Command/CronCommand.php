@@ -64,15 +64,15 @@ class CronCommand extends Console\Command\Command
     protected function execute(Console\Input\InputInterface $input, Console\Output\OutputInterface $output)
     {
         if ($input->getOption('single')) {
-            exec('sudo pkill -f " console.php cron"');
+            exec('pkill -f " console.php cron"');
         }
 
-        if ($this->proxy->useProxy()) {
-            // Cron command should re-launch new proxies, because existing proxies might be already banned by rada since
-            // the last run.
-            $this->proxy->killAll();
-            $this->proxy->makeProxiesOrDie($this->workers);
-        }
+        //if ($this->proxy->useProxy()) {
+        //    // Cron command should re-launch new proxies, because existing proxies might be already banned by rada since
+        //    // the last run.
+        //    $this->proxy->killAll();
+        //    $this->proxy->makeProxiesOrDie($this->workers);
+        //}
 
         if (!$this->jobsManager->count()) {
             $this->discoverer->discoverNewLaws();

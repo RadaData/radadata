@@ -39,29 +39,28 @@ class DumpCommand extends Console\Command\Command
     protected function execute(Console\Input\InputInterface $input, Console\Output\OutputInterface $output)
     {
         $result_count = Law::where('status', '<', Law::SAVED)->count();
-        // TODO: CHUNKS
-        $result = Law::where('status', '<', Law::SAVED)->orderBy('id')->get();
-
         $law_dir = $this->downloadsDir . '/zakon.rada.gov.ua/laws/show/';
-
         $i = 1;
-        foreach ($result as $law) {
-            $law_path = $law_dir . $law->id;
 
-            foreach (glob($law_path . "/*") as $file_path) {
-                $file = basename($file_path, ".html");
-                $download_date = date('Y-m-d H:i:s', filemtime($file_path));
-                $text = file_get_contents($file_path);
+        Law::where('status', '<', Law::SAVED)->orderBy('id')->chunk(200, function($laws) use (&$i, $law_dir, $result_count) {
+            foreach ($laws as $law) {
+                $law_path = $law_dir . $law->id;
 
-                DB::table('laws_raw')->insert(
-                    ['law_id' => $law->id, 'file' => $file, 'download_date' => $download_date, 'text' => $text]
-                );
-                $law->update(['status' => Law::SAVED]);
+                foreach (glob($law_path . "/*") as $file_path) {
+                    $file = basename($file_path, ".html");
+                    $download_date = date('Y-m-d H:i:s', filemtime($file_path));
+                    $text = file_get_contents($file_path);
+
+                    DB::table('laws_raw')->insert(
+                        ['law_id' => $law->id, 'file' => $file, 'download_date' => $download_date, 'text' => $text]
+                    );
+                    $law->update(['status' => Law::SAVED]);
+                }
+
+                print("\rAdded " . $i . ' of ' . $result_count . ' (' . floor($i / $result_count * 100) . '%)');
+                $i++;
             }
-
-            print("\rAdded " . $i . ' of ' . $result_count . ' (' . floor($i / $result_count * 100) . '%)');
-            $i++;
-        }
+        });
 
         return true;
     }
