@@ -16,7 +16,14 @@ use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
 global $container;
 $container = new ContainerBuilder();
 $loader = new YamlFileLoader($container, new FileLocator(__DIR__));
-$loader->load('app/config/services.yml');
+
+if (file_exists(BASE_PATH . 'app/config/services_prod.yml')) {
+    $loader->load(BASE_PATH . 'app/config/services_prod.yml');
+}
+else {
+    $loader->load(BASE_PATH . 'app/config/services.yml');
+
+}
 
 $container->get('database');
 
