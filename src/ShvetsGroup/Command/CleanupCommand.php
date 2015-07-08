@@ -35,7 +35,7 @@ class CleanupCommand extends Console\Command\Command
      */
     protected function execute(Console\Input\InputInterface $input, Console\Output\OutputInterface $output)
     {
-        $this->jobsManager->cleanup();
+        $this->jobsManager->deleteAll();
 
         return true;
     }

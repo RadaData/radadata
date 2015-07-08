@@ -147,9 +147,14 @@ class JobsManager extends ContainerAware
      *
      * @param $group
      */
-    public function deleteAll($group)
+    public function deleteAll($group = null)
     {
-        Job::where('group', $group)->delete();
+        if ($group) {
+            Job::where('group', $group)->delete();
+        }
+        else {
+            DB::table('jobs')->truncate();
+        }
     }
 
     /**
