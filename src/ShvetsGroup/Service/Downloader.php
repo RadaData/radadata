@@ -137,7 +137,7 @@ class Downloader
                 }
             } catch (\Exception $e) {
                 $attempt += 3;
-                $output .= ('-E-');
+                $output .= ('-E(' . $e->getMessage() . ')-');
                 continue;
             }
         }
