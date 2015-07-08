@@ -90,6 +90,13 @@ class Downloader
                     case 200:
                     case 301:
                     case 302:
+                        if (strpos($result['html'], 'Error 403') !== false) {
+                            $output .= ('-S403 ');
+                            _log($output, 'red');
+                            $this->proxy->banProxy();
+                            die();
+                        }
+
                         while ($matches = $this->detectJSProtection($result['html'])) {
                             $output .= ('-JS-');
                             $attempt++;
