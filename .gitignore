@@ -1,6 +1,6 @@
 .idea
 .DS_Store
-app/bin/
+bin/
 app/config/services_prod.yml
 vendor/
 logs/

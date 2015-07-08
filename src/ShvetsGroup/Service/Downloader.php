@@ -156,7 +156,6 @@ class Downloader
     private function doDownload($url, $delay = 5)
     {
         $client = PJClient::getInstance();
-        $client->setBinDir('app/bin');
         if ($this->proxy->useProxy()) {
             $client->addOption('--proxy=' . $this->proxy->getProxy());
         }

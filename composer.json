@@ -1,11 +1,11 @@
 {
   "require": {
     "aws/aws-sdk-php": "~3.0",
-    "jonnyw/php-phantomjs": "3.*",
     "symfony/dom-crawler": "2.6.*@dev",
     "symfony/console": "~2.7",
     "symfony/dependency-injection": "~2.7",
-    "illuminate/database": "*"
+    "illuminate/database": "*",
+    "jonnyw/php-phantomjs": "3.*"
   },
   "scripts": {
     "post-install-cmd": [
@@ -19,6 +19,6 @@
     "psr-4": {"ShvetsGroup\\": "src/ShvetsGroup/"}
   },
   "config": {
-    "bin-dir": "app/bin"
+    "bin-dir": "./bin"
   }
 }

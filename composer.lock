@@ -4,20 +4,20 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "72aefac398935985ef40c21097ae7dd6",
+    "hash": "667a95c87db13f853fc95573ed8099d2",
     "packages": [
         {
             "name": "aws/aws-sdk-php",
-            "version": "3.0.6",
+            "version": "3.0.7",
             "source": {
                 "type": "git",
                 "url": "https://github.com/aws/aws-sdk-php.git",
-                "reference": "899ee8b74eedf87d70d2797cb4add7fe22940d51"
+                "reference": "0d0cd3866c7c2b8d95a26a2e047c46a2a16e1d3e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/aws/aws-sdk-php/zipball/899ee8b74eedf87d70d2797cb4add7fe22940d51",
-                "reference": "899ee8b74eedf87d70d2797cb4add7fe22940d51",
+                "url": "https://api.github.com/repos/aws/aws-sdk-php/zipball/0d0cd3866c7c2b8d95a26a2e047c46a2a16e1d3e",
+                "reference": "0d0cd3866c7c2b8d95a26a2e047c46a2a16e1d3e",
                 "shasum": ""
             },
             "require": {
@@ -28,6 +28,7 @@
                 "php": ">=5.5"
             },
             "require-dev": {
+                "behat/behat": "~3.0",
                 "ext-dom": "*",
                 "ext-json": "*",
                 "ext-openssl": "*",
@@ -76,7 +77,7 @@
                 "s3",
                 "sdk"
             ],
-            "time": "2015-06-24 23:29:34"
+            "time": "2015-07-07 19:54:50"
         },
         {
             "name": "danielstjules/stringy",
