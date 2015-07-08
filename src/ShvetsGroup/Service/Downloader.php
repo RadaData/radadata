@@ -190,6 +190,8 @@ class Downloader
         $status = $response->getStatus();
         $html = $response->getContent();
 
+        sleep(10);
+
         return [
             'status' => $status,
             'html'   => preg_replace('|charset="?windows-1251"?|', 'charset="utf-8"', $html)
