@@ -68,7 +68,8 @@ class Downloader
         $save_as = $options['save_as'] ? $this->fullURL($options['save_as']) : null;
 
         $output = '';
-        $output .= ($this->proxy->getProxy() . ' → ' . $this->shortURL($url) . ': ');
+        $this->proxy->getProxy();
+        $output .= ($this->proxy->proxy . '/' . $this->proxy->ip . ' → ' . $this->shortURL($url) . ': ');
         $style = 'default';
 
         if ($this->isDownloaded($save_as ?: $url) && !$options['re_download']) {
@@ -121,9 +122,17 @@ class Downloader
                         _log($output, $style);
 
                         return $result['html'];
+                    case 403:
+                        if (strpos($result['html'], 'Ви потрапили до забороненого ресурсу') !== false) {
+                            $this->proxy->banProxy();
+                            die();
+                        }
+                        $output .= ('-S' . $result['status'] . ' ');
+                        _log($output, 'red');
+                        throw new \Exception('Page is 403.');
+                    break;
                     case 404:
                         $output .= ('-S' . $result['status'] . ' ');
-
                         _log($output, 'red');
                         throw new \Exception('Page is 404.');
                         break;

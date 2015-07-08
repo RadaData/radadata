@@ -14,8 +14,13 @@ parameters:
     aws:
       version: latest
       profile: default
-      region: eu-central-1
+      region: eu-west-1
       server_keys_dir: 'app/servers'
+      ImageId: 'ami-4a268b3d'
+      InstanceType: 't1.micro'
+      KeyName: 'AMI'
+      SecurityGroupIds: 'sg-f5a19481'
+      SpotPrice: '0.01'
 
 imports:
   - { resource: common.yml }

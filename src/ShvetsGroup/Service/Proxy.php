@@ -11,7 +11,12 @@ class Proxy
     /**
      * @var string Current proxy.
      */
-    private $proxy;
+    public $proxy;
+
+    /**
+     * @var string Current proxy's IP address.
+     */
+    public $ip;
 
     /**
      * @var array List of available proxies.
@@ -22,6 +27,11 @@ class Proxy
      * @var Ec2Client.
      */
     private $ec2Client;
+
+    /**
+     * @var array AWS configuration.
+     */
+    private $aws_config;
 
     /**
      * @var string Absolute path to server keys.
@@ -35,6 +45,7 @@ class Proxy
 
     public function __construct($aws_config, $useProxy)
     {
+        $this->aws_config = $aws_config;
         $this->ec2Client = new Ec2Client($aws_config);
         $this->serverKeysPath = BASE_PATH . $aws_config['server_keys_dir'];
         $this->useProxy = $useProxy;
@@ -155,15 +166,15 @@ class Proxy
             $result = $this->ec2Client->requestSpotInstances([
                 'InstanceCount'       => $count,
                 'LaunchSpecification' => [
-                    'ImageId'          => 'ami-4a268b3d',
-                    'InstanceType'     => 't1.micro',
-                    'KeyName'          => 'AMI',
+                    'ImageId'          => $this->aws_config['ImageId'],
+                    'InstanceType'     => $this->aws_config['InstanceType'],
+                    'KeyName'          => $this->aws_config['KeyName'],
                     'Monitoring'       => [
                         'Enabled' => false,
                     ],
-                    'SecurityGroupIds' => ['sg-f5a19481'],
+                    'SecurityGroupIds' => [$this->aws_config['SecurityGroupIds']],
                 ],
-                'SpotPrice'           => '0.01'
+                'SpotPrice'           => $this->aws_config['SpotPrice']
             ]);
             $spot_request_ids = $result->getPath('SpotInstanceRequests[].SpotInstanceRequestId');
 
@@ -260,7 +271,7 @@ class Proxy
 
             // This will be executed by main script.
             if ($pid) {
-                $this->saveProxy($proxy_port);
+                $this->saveProxy($ip, $proxy_port);
                 $proxy_port--;
                 continue;
             } // This will be executed by forks.
@@ -301,9 +312,9 @@ class Proxy
     /**
      * Save proxy address to the database pool.
      */
-    private function saveProxy($proxy_port)
+    private function saveProxy($ip, $proxy_port)
     {
-        $this->proxies[] = ['proxy' => '127.0.0.1:' . $proxy_port, 'claimed' => 0];
+        $this->proxies[] = ['proxy' => '127.0.0.1:' . $proxy_port, 'ip' => $ip, 'claimed' => 0];
     }
 
     /**
@@ -322,10 +333,32 @@ class Proxy
             if ($item1['claimed'] == $item2['claimed']) return 0;
             return $item1['claimed'] < $item2['claimed'] ? -1 : 1;
         });
+        $this->ip = $this->proxies[0]['ip'];
         $this->proxy = $this->proxies[0]['proxy'];
         $this->proxies[0] = time();
 
         return $this->proxy;
+    }
+
+    /**
+     * Terminate banned proxy instance.
+     */
+    public function banProxy()
+    {
+        _log('Proxy ' . $this->ip . ' banned.', 'red');
+        $target_instance_ids = [];
+        $instances = $this->getProxyInstances();
+        foreach ($instances as $instance) {
+            if ($instance['PublicIpAddress'] == $this->ip) {
+                $target_instance_ids[] = $instance['InstanceId'];
+            }
+        }
+        if (!$target_instance_ids) {
+            return;
+        }
+        $this->ec2Client->terminateInstances(['InstanceIds' => $target_instance_ids]);
+        $this->waitUntil('InstanceTerminated', ['InstanceIds' => $target_instance_ids]);
+        _log('Proxy ' . $this->ip . ' terminated.', 'red');
     }
 
     /**
