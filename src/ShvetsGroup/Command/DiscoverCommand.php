@@ -97,7 +97,10 @@ class DiscoverCommand extends Console\Command\Command
         $date = strtotime($starting_date ?: '1991-01-01 00:00:00');
 
         if ($date <= strtotime('1991-01-01 00:00:00')) {
-            $this->jobsManager->add('discover_command', 'discoverDailyLawList', ['law_list_url' => '/laws/main/ay1990/page'], 'discover');
+            $this->jobsManager->add('discover_command', 'discoverDailyLawList', [
+                'law_list_url' => '/laws/main/ay1990/page',
+                'date' => date('Y-m-d', $date),
+            ], 'discover');
         }
 
         while ($date < strtotime('midnight')) {
