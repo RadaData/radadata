@@ -1,7 +1,0 @@
-db:
-  database: radadata
-  username: root
-  password: root
-  host: localhost
-  port: 3306
-  driver: mysql
