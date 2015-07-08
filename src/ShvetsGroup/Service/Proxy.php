@@ -50,8 +50,6 @@ class Proxy
 
     public function killAll()
     {
-        $this->dropConnections();
-
         $this->terminateInstances();
         $this->cancelSpotRequests();
 
@@ -114,16 +112,31 @@ class Proxy
     public function makeProxiesOrDie($count, $timeout = 10)
     {
         try {
-            $instanceIds = $this->makeSpotRequests($count);
+            $real_proxy_count = count($this->getProxyInstances());
+            $proxy_to_create = $count - $real_proxy_count;
 
-            _log('Waiting for ' . $count . ' instances to launch.');
+            if ($real_proxy_count > 0) {
+                if ($proxy_to_create <= 0) {
+                    _log('There are ' . $real_proxy_count . ' existing proxies, no need to create new.', 'green');
+
+                    return;
+                }
+                else {
+                    _log('There are ' . $real_proxy_count . ' existing proxies, I am going to create ' . $proxy_to_create . ' more.', 'green');
+
+                }
+            }
+
+            $instanceIds = $this->makeSpotRequests($proxy_to_create);
+
+            _log('Waiting for ' . $proxy_to_create . ' instances to launch.');
             $this->waitUntil('InstanceRunning', [
                 'InstanceIds' => $instanceIds,
             ]);
             $this->waitUntil('InstanceStatusOk', [
                 'InstanceIds' => $instanceIds,
             ]);
-            _log('' . $count . ' proxy instances have been launched.', 'green');
+            _log('' . $proxy_to_create . ' new proxy instances have been launched.', 'green');
 
             $this->establishConnections();
 
