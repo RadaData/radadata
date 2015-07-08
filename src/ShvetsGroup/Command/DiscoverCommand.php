@@ -95,6 +95,7 @@ class DiscoverCommand extends Console\Command\Command
         $this->jobsManager->deleteAll('discover');
 
         $date = strtotime($starting_date ?: '1991-01-01 00:00:00');
+        $date = max($date, strtotime('1991-01-01 00:00:00'));
 
         if ($date <= strtotime('1991-01-01 00:00:00')) {
             $this->jobsManager->add('discover_command', 'discoverDailyLawList', [
