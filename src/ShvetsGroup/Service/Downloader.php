@@ -90,7 +90,7 @@ class Downloader
                     case 200:
                     case 301:
                     case 302:
-                        if (strpos($result['html'], 'Error 403') !== false || strpos($result['html'], 'Доступ заборонено') !== false) {
+                        if (strpos($result['html'], 'Error 403') !== false || strpos($result['html'], 'Доступ заборонено') !== false || strpos($result['html'], 'Ваш IP автоматично заблоковано')) {
                             $output .= ('-S403 ');
                             _log($output, 'red');
                             $this->proxy->banProxy();
@@ -148,7 +148,6 @@ class Downloader
                         throw new \Exception('Page is 404.');
                         break;
                     default:
-                        sleep(5);
                         $attempt += 1;
                         $output .= ('-S' . $result['status'] . '-');
                         $style = 'yellow';
@@ -184,6 +183,7 @@ class Downloader
         $client->addOption('--load-images=false');
         $request = $client->getMessageFactory()->createRequest($url);
         $request->setDelay($delay);
+        $request->setTimeout(60000);
         $request->addHeader('User-Agent', $this->identity->getUserAgent());
         $response = $client->getMessageFactory()->createResponse();
         $client->send($request, $response);

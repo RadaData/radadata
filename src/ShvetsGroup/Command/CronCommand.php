@@ -82,10 +82,7 @@ class CronCommand extends Console\Command\Command
         }
 
         if ($this->proxy->useProxy()) {
-            if ($input->getOption('kill_old_proxies')) {
-                $this->proxy->killAll();
-            }
-            $this->proxy->makeProxiesOrDie($this->workers);
+            $this->proxy->connect($this->workers, $input->getOption('kill_old_proxies'));
         }
 
         if (!$this->jobsManager->count()) {

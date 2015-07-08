@@ -51,7 +51,7 @@ class CleanupCommand extends Console\Command\Command
             $this->jobsManager->deleteAll();
         }
         if ($input->getOption('proxy') || $input->getOption('all')) {
-            $this->proxy->killAll();
+            $this->proxy->reset();
         }
 
         return true;

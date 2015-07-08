@@ -19,9 +19,17 @@ services:
     identity:
         class:     \ShvetsGroup\Service\Identity
 
+    aws_proxy:
+        class:     \ShvetsGroup\Service\AWSProxy
+        arguments: [ '%aws%' ]
+
+    list_proxy:
+        class:     \ShvetsGroup\Service\ListProxy
+        arguments: [ '%proxy_list%' ]
+
     proxy:
         class:     \ShvetsGroup\Service\Proxy
-        arguments: [ '%aws%', '%use_proxy%' ]
+        arguments: [ '%use_proxy%', @list_proxy ]
 
     status_command:
        class:     \ShvetsGroup\Command\StatusCommand
