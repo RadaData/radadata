@@ -46,7 +46,7 @@ class CronCommand extends Console\Command\Command
         $this->setDescription('Cron runner.');
         $this->addOption('single', 's', Console\Input\InputOption::VALUE_NONE, 'Run single instance of the script (old instances will be terminated).');
         $this->addOption('proxy', 'p', Console\Input\InputOption::VALUE_OPTIONAL, 'Whether or not to use proxy servers and how much proxies to create.');
-        $this->addOption('kill_old_proxies', 'k', Console\Input\InputOption::VALUE_OPTIONAL, 'Kill old proxies and create new.');
+        $this->addOption('kill_old_proxies', 'k', Console\Input\InputOption::VALUE_NONE, 'Kill old proxies and create new.');
 
         $this->discoverer = $discoverer;
         $this->downloader = $downloader;

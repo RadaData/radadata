@@ -65,7 +65,7 @@ services:
 
     cleanup_command:
        class:     \ShvetsGroup\Command\CleanupCommand
-       arguments: [ @jobs_manager ]
+       arguments: [ @jobs_manager, @proxy ]
 
     cron_command:
        class:     \ShvetsGroup\Command\CronCommand
