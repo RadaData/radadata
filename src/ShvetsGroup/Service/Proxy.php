@@ -235,7 +235,7 @@ class Proxy
      */
     public function releaseProxy()
     {
-        _log(getmypid() . '::' . 'Proxy released: ' . $this->proxy->ip);
+        _log('Proxy released: ' . $this->proxy->ip);
         DB::table('proxy')->where('address', $this->proxy->address)->update(['in_use' => 0, 'last_used' => round(microtime(true) * 100)]);
         $this->proxy = null;
     }
@@ -346,7 +346,7 @@ class Proxy
             }
             DB::table('proxy')->where('address', $p->proxy->address)->update(['in_use' => 1, 'last_used' => round(microtime(true) * 100)]);
         });
-        _log(getmypid() . '::' . 'Proxy claimed: ' . $this->proxy->ip);
+        _log('Proxy claimed: ' . $this->proxy->ip);
 
         return $this->proxy->address;
     }

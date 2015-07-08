@@ -15,6 +15,8 @@ class Job extends Model
 
     public function execute($container = null)
     {
+        _log(' ==== Job ==== ' . $this->service . '->' . $this->method . '(' . json_encode($this->parameters) . ')', 'title');
+
         if ($this->service) {
             $func = [$container->get($this->service), $this->method];
         } else {

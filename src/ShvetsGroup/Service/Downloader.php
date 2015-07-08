@@ -69,7 +69,7 @@ class Downloader
 
         $output = '';
         $this->proxy->getProxy();
-        $output .= (getmypid() . '::' . $this->proxy->proxy->address . '/' . $this->proxy->proxy->ip . ' → ' . $this->shortURL($url) . ': ');
+        $output .= ($this->proxy->proxy->address . '/' . $this->proxy->proxy->ip . ' → ' . $this->shortURL($url) . ': ');
         $style = 'default';
 
         if ($this->isDownloaded($save_as ?: $url) && !$options['re_download']) {
