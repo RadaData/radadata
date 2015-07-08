@@ -66,7 +66,14 @@ class CronCommand extends Console\Command\Command
     protected function execute(Console\Input\InputInterface $input, Console\Output\OutputInterface $output)
     {
         if ($input->getOption('single')) {
-            exec('pkill -f " console.php cron"');
+            $output = [];
+            exec('pgrep -l -f "^php console.php"', $output);
+            foreach ($output as $line) {
+                $pid = preg_replace('|([0-9]+)(\s.*)|', '$1', $line);
+                if ($pid != getmypid()) {
+                    exec("kill -9 $pid");
+                }
+            }
         }
 
         if ($input->getOption('proxy')) {
