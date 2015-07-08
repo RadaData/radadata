@@ -5,11 +5,12 @@ namespace ShvetsGroup\Service;
 class ListProxy implements IProxyProvider
 {
     private $proxy_list = [];
-    private $banned_list_path = BASE_PATH . 'app/banned_proxies.txt';
+    private $banned_list_path;
 
     public function __construct($proxy_list)
     {
         $this->proxy_list = $proxy_list;
+        $this->banned_list_path = BASE_PATH . 'app/banned_proxies.txt';
     }
 
     public function get($count = null, $reset = false)
