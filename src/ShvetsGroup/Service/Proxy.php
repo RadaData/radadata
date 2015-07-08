@@ -176,4 +176,12 @@ class Proxy
         $this->proxyProvider->ban($this->proxy->ip);
         _log('Proxy ' . $this->proxy->ip . ' terminated.', 'red');
     }
+
+    /**
+     * Terminate banned proxy instance.
+     */
+    public function reset()
+    {
+        $this->proxyProvider->reset();
+    }
 }

@@ -39,4 +39,8 @@ class ListProxy implements IProxyProvider
         $banned[] = $ip;
         file_put_contents(BASE_PATH . 'app/banned_proxies.txt', implode("\n",$banned));
     }
+
+    public function reset()
+    {
+    }
 }
