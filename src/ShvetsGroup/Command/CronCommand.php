@@ -87,7 +87,7 @@ class CronCommand extends Console\Command\Command
 
         if (!$this->jobsManager->count()) {
             $this->discoverer->discoverNewLaws();
-            //$this->downloader->downloadNewLaws();
+            $this->downloader->downloadNewLaws();
             // Download cards
             // Download revisions
             // Download relations
