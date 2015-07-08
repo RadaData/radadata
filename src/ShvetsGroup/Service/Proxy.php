@@ -73,6 +73,8 @@ class Proxy
         foreach ($ips as $address => $ip) {
             DB::table('proxy')->insert(['address' => $address, 'ip' => $ip, 'last_used' => 0]);
         }
+
+        _log(count($ips) . ' fresh proxies connected.');
         $initialized = true;
     }
 
@@ -82,7 +84,6 @@ class Proxy
     private function disconnect()
     {
         _log('Dropping old connections.');
-        exec('pkill -f "ssh -o UserKnownHostsFile"');
         DB::table('proxy')->truncate();
     }
 

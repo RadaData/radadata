@@ -40,6 +40,8 @@ class AWSProxy implements IProxyProvider
      */
     public function get($count = null, $reset = false)
     {
+        exec('pkill -f "ssh -o UserKnownHostsFile"');
+
         if ($reset) {
             $this->reset();
         }
