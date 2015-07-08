@@ -69,7 +69,7 @@ class Downloader
 
         $output = '';
         $this->proxy->getProxy();
-        $output .= ($this->proxy->proxy . '/' . $this->proxy->ip . ' → ' . $this->shortURL($url) . ': ');
+        $output .= (getmypid() . '::' . $this->proxy->proxy->address . '/' . $this->proxy->proxy->ip . ' → ' . $this->shortURL($url) . ': ');
         $style = 'default';
 
         if ($this->isDownloaded($save_as ?: $url) && !$options['re_download']) {
@@ -77,6 +77,7 @@ class Downloader
             $output .= ('* ');
             _log($output);
 
+            $this->proxy->releaseProxy();
             return $html;
         }
 
@@ -121,15 +122,18 @@ class Downloader
                         $output .= ('@' . $result['status'] . ' ');
                         _log($output, $style);
 
+                        $this->proxy->releaseProxy();
+
                         return $result['html'];
                     case 403:
+                        $output .= ('-S' . $result['status'] . ' ');
+                        _log($output, 'red');
                         if (strpos($result['html'], 'Ви потрапили до забороненого ресурсу') !== false) {
                             $this->proxy->banProxy();
                             die();
                         }
-                        $output .= ('-S' . $result['status'] . ' ');
-                        _log($output, 'red');
-                        throw new \Exception('Page is 403.');
+                        $attempt++;
+                        continue 2;
                     break;
                     case 404:
                         $output .= ('-S' . $result['status'] . ' ');
@@ -150,7 +154,9 @@ class Downloader
                 continue;
             }
         }
+
         _log($output, 'red');
+        $this->proxy->releaseProxy();
         throw new \Exception('Resource is not available (a).');
     }
 

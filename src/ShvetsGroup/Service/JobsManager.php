@@ -7,6 +7,8 @@ use Illuminate\Database\Capsule\Manager as DB;
 use ShvetsGroup\Model\Job;
 use ShvetsGroup\Service\Database as DBManager;
 
+declare(ticks = 1);
+
 class JobsManager extends ContainerAware
 {
 
@@ -15,12 +17,16 @@ class JobsManager extends ContainerAware
      */
     private $proxy;
 
+    private $currentJobs = [];
+    private $signalQueue = [];
+
     /**
      * @param Proxy $proxy
      */
     public function __construct($proxy)
     {
         $this->proxy = $proxy;
+        pcntl_signal(SIGCHLD, [$this, "childSignalHandler"]);
     }
 
     /**
@@ -38,16 +44,24 @@ class JobsManager extends ContainerAware
     {
         $this->cleanup();
 
-        $real_workers_count = min($workers_count, $this->proxy->count());
-        _log('Launching ' . $real_workers_count . ' workers for "' . ($group ? ($group . '/') : '' ). ($service ? $service . '->' : '') . $method . '" operations.', 'title');
+        _log('Launching ' . $this->realWorkersCount($workers_count) . ' workers for "' . ($group ? ($group . '/') : '') . ($service ? $service . '->' : '') . $method . '" operations.', 'title');
 
-        if ($real_workers_count == 1) {
+        if ($this->realWorkersCount($workers_count) == 1) {
             while ($job = $this->fetch($group, $service, $method)) {
                 $job->execute($this->container);
             }
         } else {
             $child = 0;
             while (true) {
+                if (!$this->realWorkersCount($workers_count)) {
+                    _log('Can not create any workers. Exiting.' . "\n", 'red');
+                    die();
+                }
+                if (count($this->currentJobs) >= $this->realWorkersCount($workers_count)) {
+                    sleep(1000);
+                    continue;
+                }
+
                 $job = $this->fetch($group, $service, $method);
 
                 if (!$job) {
@@ -58,8 +72,6 @@ class JobsManager extends ContainerAware
                         return;
                     }
                 }
-
-                $child++;
 
                 DBManager::disconnect();
 
@@ -73,9 +85,11 @@ class JobsManager extends ContainerAware
 
                 // Parent process.
                 if ($pid) {
-                    if ($child >= $real_workers_count) {
-                        pcntl_wait($status);
-                        $child--;
+                    $this->currentJobs[$pid] = $job->id;
+
+                    if (isset($this->signalQueue[$pid])){
+                        $this->childSignalHandler(SIGCHLD, $pid, $this->signalQueue[$pid]);
+                        unset($this->signalQueue[$pid]);
                     }
                 } // Worker.
                 else {
@@ -84,6 +98,35 @@ class JobsManager extends ContainerAware
                 }
             }
         }
+    }
+
+    public function realWorkersCount($workers_count)
+    {
+        return min($workers_count, $this->proxy->count());
+    }
+
+    public function childSignalHandler($signo, $pid = null, $status = null)
+    {
+        if (!$pid) {
+            $pid = pcntl_waitpid(-1, $status, WNOHANG);
+        }
+
+        while ($pid > 0) {
+            if ($pid && isset($this->currentJobs[$pid])) {
+                $exitCode = pcntl_wexitstatus($status);
+                if ($exitCode != 0) {
+                    echo "$pid exited with status " . $exitCode . "\n";
+                }
+                unset($this->currentJobs[$pid]);
+            } else {
+                if ($pid) {
+                    $this->signalQueue[$pid] = $status;
+                }
+            }
+            $pid = pcntl_waitpid(-1, $status, WNOHANG);
+        }
+
+        return true;
     }
 
     /**
@@ -108,7 +151,7 @@ class JobsManager extends ContainerAware
     {
         $job = null;
 
-        DB::transaction(function() use ($group, $service, $method, &$job) {
+        DB::transaction(function () use ($group, $service, $method, &$job) {
             $query = Job::whereNull('claimed')->orderBy('id');
             if ($group) {
                 $query->where('group', $group);
@@ -139,7 +182,7 @@ class JobsManager extends ContainerAware
      */
     public function add($service, $method, $parameters, $group)
     {
-        Job::create(['service' => $service, 'method' => $method , 'parameters' => $parameters, 'group' => $group]);
+        Job::create(['service' => $service, 'method' => $method, 'parameters' => $parameters, 'group' => $group]);
     }
 
     /**
@@ -151,8 +194,7 @@ class JobsManager extends ContainerAware
     {
         if ($group) {
             Job::where('group', $group)->delete();
-        }
-        else {
+        } else {
             DB::table('jobs')->truncate();
         }
     }

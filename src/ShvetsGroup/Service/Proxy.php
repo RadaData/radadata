@@ -4,24 +4,15 @@ namespace ShvetsGroup\Service;
 
 use Aws\Ec2\Ec2Client;
 use GuzzleHttp\Promise;
+use Illuminate\Database\Capsule\Manager as DB;
 
 class Proxy
 {
 
     /**
-     * @var string Current proxy.
+     * @var object Current proxy.
      */
     public $proxy;
-
-    /**
-     * @var string Current proxy's IP address.
-     */
-    public $ip;
-
-    /**
-     * @var array List of available proxies.
-     */
-    private $proxies = [];
 
     /**
      * @var Ec2Client.
@@ -61,6 +52,7 @@ class Proxy
 
     public function killAll()
     {
+        $this->dropConnections();
         $this->terminateInstances();
         $this->cancelSpotRequests();
 
@@ -129,7 +121,7 @@ class Proxy
             if ($real_proxy_count > 0) {
                 if ($proxy_to_create <= 0) {
                     _log('There are ' . $real_proxy_count . ' existing proxies, no need to create new.', 'green');
-
+                    $this->establishConnections($count);
                     return;
                 }
                 else {
@@ -149,7 +141,7 @@ class Proxy
             ]);
             _log('' . $proxy_to_create . ' new proxy instances have been launched.', 'green');
 
-            $this->establishConnections();
+            $this->establishConnections($count);
 
             _log('' . $count . ' proxy instances are ready.', 'green');
         } catch (\Exception $e) {
@@ -209,7 +201,12 @@ class Proxy
         try {
             $this->establishConnections();
 
-            return $this->selectProxy();
+            if (!$this->proxy) {
+                return $this->selectProxy();
+            }
+            else {
+                return $this->proxy->address;
+            }
         } catch (\Exception $e) {
             _log($e->getMessage(), 'red');
             die();
@@ -230,7 +227,7 @@ class Proxy
         // Init proxies if needed.
         $this->establishConnections();
 
-        return count($this->proxies);
+        return DB::table('proxy')->count();
     }
 
     /**
@@ -238,6 +235,8 @@ class Proxy
      */
     public function releaseProxy()
     {
+        _log(getmypid() . '::' . 'Proxy released: ' . $this->proxy->ip);
+        DB::table('proxy')->where('address', $this->proxy->address)->update(['in_use' => 0, 'last_used' => round(microtime(true) * 100)]);
         $this->proxy = null;
     }
 
@@ -246,9 +245,11 @@ class Proxy
      * establish ssh tunnels to these servers by forking current script. If the main php script will be killed, all
      * connections will die as well.
      *
+     * @param null $count
+     *
      * @throws \Exception
      */
-    private function establishConnections()
+    private function establishConnections($count = null)
     {
         static $initialized;
         if ($initialized) {
@@ -261,8 +262,12 @@ class Proxy
 
         $ips = $this->describeAvailableEC2Instances();
 
-        _log('Connecting to ' . count($ips) . ' proxy instances.');
+        _log('Connecting to ' . ($count != null ? $count : count($ips)) . ' proxy instances.');
+        $i = 0;
         foreach ($ips as $ip) {
+            if ($count != null && $i == $count) {
+                break;
+            }
             $pid = pcntl_fork();
 
             if ($pid == -1) {
@@ -273,6 +278,7 @@ class Proxy
             if ($pid) {
                 $this->saveProxy($ip, $proxy_port);
                 $proxy_port--;
+                $i++;
                 continue;
             } // This will be executed by forks.
             else {
@@ -290,6 +296,7 @@ class Proxy
     {
         _log('Dropping old connections.');
         exec('pkill -f "ssh -o UserKnownHostsFile"');
+        DB::table('proxy')->truncate();
     }
 
     /**
@@ -314,7 +321,8 @@ class Proxy
      */
     private function saveProxy($ip, $proxy_port)
     {
-        $this->proxies[] = ['proxy' => '127.0.0.1:' . $proxy_port, 'ip' => $ip, 'claimed' => 0];
+        $proxy = ['address' => '127.0.0.1:' . $proxy_port, 'ip' => $ip, 'last_used' => 0];
+        DB::table('proxy')->insert($proxy);
     }
 
     /**
@@ -325,19 +333,22 @@ class Proxy
      */
     private function selectProxy()
     {
-        if (!$this->proxies) {
+        if (!$this->count()) {
             throw new \Exception('No available proxy.');
         }
 
-        usort($this->proxies, function ($item1, $item2) {
-            if ($item1['claimed'] == $item2['claimed']) return 0;
-            return $item1['claimed'] < $item2['claimed'] ? -1 : 1;
+        $this->proxy = null;
+        $p = $this;
+        DB::transaction(function() use ($p) {
+            $p->proxy = DB::table('proxy')->where('in_use', 0)->orderBy('last_used')->first();
+            if (!$p->proxy) {
+                throw new \Exception('Proxy can not be selected.');
+            }
+            DB::table('proxy')->where('address', $p->proxy->address)->update(['in_use' => 1, 'last_used' => round(microtime(true) * 100)]);
         });
-        $this->ip = $this->proxies[0]['ip'];
-        $this->proxy = $this->proxies[0]['proxy'];
-        $this->proxies[0] = time();
+        _log(getmypid() . '::' . 'Proxy claimed: ' . $this->proxy->ip);
 
-        return $this->proxy;
+        return $this->proxy->address;
     }
 
     /**
@@ -345,11 +356,13 @@ class Proxy
      */
     public function banProxy()
     {
-        _log('Proxy ' . $this->ip . ' banned.', 'red');
+        _log('Proxy ' . $this->proxy->ip . ' banned.', 'red');
+        DB::table('proxy')->where('address', $this->proxy->address)->delete();
+
         $target_instance_ids = [];
         $instances = $this->getProxyInstances();
         foreach ($instances as $instance) {
-            if ($instance['PublicIpAddress'] == $this->ip) {
+            if ($instance['PublicIpAddress'] == $this->proxy->ip) {
                 $target_instance_ids[] = $instance['InstanceId'];
             }
         }
@@ -358,7 +371,8 @@ class Proxy
         }
         $this->ec2Client->terminateInstances(['InstanceIds' => $target_instance_ids]);
         $this->waitUntil('InstanceTerminated', ['InstanceIds' => $target_instance_ids]);
-        _log('Proxy ' . $this->ip . ' terminated.', 'red');
+
+        _log('Proxy ' . $this->proxy->ip . ' terminated.', 'red');
     }
 
     /**
