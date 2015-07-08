@@ -90,7 +90,7 @@ class Downloader
                     case 200:
                     case 301:
                     case 302:
-                        if (strpos($result['html'], 'Error 403') !== false) {
+                        if (strpos($result['html'], 'Error 403') !== false || strpos($result['html'], 'Доступ заборонено') !== false) {
                             $output .= ('-S403 ');
                             _log($output, 'red');
                             $this->proxy->banProxy();
