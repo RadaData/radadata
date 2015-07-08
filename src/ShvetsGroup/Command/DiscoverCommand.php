@@ -172,7 +172,7 @@ class DiscoverCommand extends Console\Command\Command
                         }
                         $date = date_format(date_create_from_format('d.m.Y', $raw_date), 'Y-m-d');
 
-                        Law::updateOrCreate(['id' => $id, 'date' => $date]);
+                        Law::firstOrCreate(['id' => $id])->update(['date' => $date]);
                         $this->jobsManager->add('download_command', 'downloadLaw', ['id' => $id], 'download');
                     }
                 );
