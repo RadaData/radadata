@@ -113,7 +113,11 @@ class DiscoverCommand extends Console\Command\Command
             $date = strtotime(date('c', $date) . '+1 day');
         }
 
-        $this->jobsManager->add('discover_command', 'discoverDailyLawList', ['law_list_url' => '/laws/main/a' . date('Ymd') . '/sp5/page', 're_download' => $re_download], 'discover');
+        $this->jobsManager->add('discover_command', 'discoverDailyLawList', [
+            'law_list_url' => '/laws/main/a' . date('Ymd') . '/sp5/page',
+            'date' => date('Y-m-d'),
+            're_download' => $re_download
+        ], 'discover');
     }
 
     /**
@@ -167,6 +171,7 @@ class DiscoverCommand extends Console\Command\Command
                         $id = preg_replace('|/laws/show/|', '', urldecode(shortURL($url)));
 
                         $raw_date = $node->filterXPath('//font[@color="#004499"]')->text();
+                        $raw_date = preg_replace('|([0-9]{2}\.[0-9]{2}\.[0-9]{4}).*|', '$1', $raw_date);
                         if (!preg_match('|[0-9]{2}\.[0-9]{2}\.[0-9]{4}|', $raw_date)) {
                             throw new \Exception("Date has not been found in #{$id} at text: " . $node->text());
                         }

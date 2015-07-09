@@ -153,7 +153,7 @@ class JobsManager extends ContainerAware
         $job = null;
 
         DB::transaction(function () use ($group, $service, $method, &$job) {
-            $query = Job::whereNull('claimed')->orderBy('id');
+            $query = Job::where('claimed', 0)->where('finished', 0)->orderBy('id');
             if ($group) {
                 $query->where('group', $group);
             }
@@ -205,7 +205,7 @@ class JobsManager extends ContainerAware
      */
     public function cleanup()
     {
-        Job::whereNotNull('claimed')->update(['claimed' => null]);
+        Job::where('claimed', '<>', 0)->update(['claimed' => 0]);
     }
 
     /**
