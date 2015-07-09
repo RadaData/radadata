@@ -78,7 +78,7 @@ class JobsManager extends ContainerAware
                     throw new \Exception("Could not fork worker process.");
                 }
 
-                DBManager::reconnect();
+                DBManager::connect();
 
                 // Parent process.
                 if ($pid) {
