@@ -143,13 +143,20 @@ class ProxyManager
 
         $this->proxy = null;
         $p = $this;
-        DB::transaction(function() use ($p) {
-            $p->proxy = DB::table('proxy')->where('in_use', 0)->orderBy('last_used')->first();
-            if (!$p->proxy) {
-                throw new \Exception('Proxy can not be selected.');
-            }
-            DB::table('proxy')->where('address', $p->proxy->address)->update(['in_use' => 1, 'last_used' => round(microtime(true) * 100)]);
-        });
+        try {
+            DB::transaction(function() use ($p) {
+                $p->proxy = DB::table('proxy')->where('in_use', 0)->orderBy('last_used')->first();
+                if (!$p->proxy) {
+                    throw new \Exception('Proxy can not be selected.');
+                }
+                DB::table('proxy')->where('address', $p->proxy->address)->update(['in_use' => 1, 'last_used' => round(microtime(true) * 100)]);
+            });
+        }
+        catch (\Exception $e) {
+            print(1);
+            die();
+        }
+
         _log('Proxy claimed: ' . $this->proxy->ip);
 
         return $this->proxy;
