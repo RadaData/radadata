@@ -168,6 +168,10 @@ class JobsManager extends ContainerAware
             DB::table('jobs')->where('id', $job->id)->update(['claimed' => time()]);
         });
 
+        if ($job) {
+            $job = Job::find($job->id);
+        }
+
         return $job;
     }
 
