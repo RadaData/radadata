@@ -92,7 +92,7 @@ class CheckCommand extends Console\Command\Command
                     continue;
                 }
 
-                if ($law->status > Law::NOT_DOWNLOADED && file_exists($card_path) && is_403(file_get_contents($card_path))) {
+                if ($law->status > Law::NOT_DOWNLOADED && ((file_exists($card_path) && is_403(file_get_contents($card_path))) || (!file_exists($card_path)))) {
                     $d_broken_card++;
                     if ($fix) {
                         remove_dir($law_path);
