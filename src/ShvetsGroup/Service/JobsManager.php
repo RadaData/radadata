@@ -63,9 +63,7 @@ class JobsManager extends ContainerAware
                     continue;
                 }
 
-                $job = $this->fetch($group, $service, $method);
-
-                if (!$job) {
+                if (!$this->count()) {
                     if ($wait_if_no_jobs) {
                         sleep(1000);
                         continue;
@@ -86,7 +84,7 @@ class JobsManager extends ContainerAware
 
                 // Parent process.
                 if ($pid) {
-                    $this->currentJobs[$pid] = $job->id;
+                    $this->currentJobs[$pid] = 1;
 
                     if (isset($this->signalQueue[$pid])){
                         $this->childSignalHandler(SIGCHLD, $pid, $this->signalQueue[$pid]);
@@ -94,6 +92,7 @@ class JobsManager extends ContainerAware
                     }
                 } // Worker.
                 else {
+                    $job = $this->fetch($group, $service, $method);
                     $job->execute($this->container);
                     exit;
                 }
