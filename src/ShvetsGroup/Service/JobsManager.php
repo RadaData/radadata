@@ -153,25 +153,22 @@ class JobsManager extends ContainerAware
     {
         $job = null;
 
-        try {
-            DB::transaction(function () use ($group, $service, $method, &$job) {
-                $query = Job::where('claimed', 0)->where('finished', 0)->orderBy('id');
-                if ($group) {
-                    $query->where('group', $group);
-                }
-                if ($service) {
-                    $query->where('service', $service);
-                }
-                if ($method) {
-                    $query->where('method', $method);
-                }
-                $job = $query->first();
-                $job->update(['claimed' => time()]);
-            });
+        DB::beginTransaction();
+
+        $query = Job::where('claimed', 0)->where('finished', 0)->orderBy('id');
+        if ($group) {
+            $query->where('group', $group);
         }
-        catch (\Exception $e) {
-            return $this->fetch($group, $service, $method);
+        if ($service) {
+            $query->where('service', $service);
         }
+        if ($method) {
+            $query->where('method', $method);
+        }
+        $job = $query->first();
+        $job->update(['claimed' => time()]);
+
+        DB::commit();
 
         return $job;
     }
