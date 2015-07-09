@@ -72,15 +72,13 @@ class JobsManager extends ContainerAware
                     }
                 }
 
-                DBManager::disconnect();
-
                 $pid = pcntl_fork();
 
                 if ($pid == -1) {
                     throw new \Exception("Could not fork worker process.");
                 }
 
-                DBManager::connect();
+                DBManager::reconnect();
 
                 // Parent process.
                 if ($pid) {

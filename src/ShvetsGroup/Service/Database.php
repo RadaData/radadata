@@ -14,23 +14,26 @@ use Illuminate\Database\Capsule\Manager as DB;
 class Database
 {
     public static $config;
+    public static $instance;
+    private $capsule;
 
     public function __construct($config)
     {
         static::$config = $config;
+        static::$instance = $this;
         $this->connect();
     }
 
     public static function connect()
     {
-        $capsule = new DB;
-        $capsule->addConnection(static::$config);
-        $capsule->setAsGlobal();
-        $capsule->bootEloquent();
+        static::$instance->capsule = new DB;
+        static::$instance->capsule->addConnection(static::$config);
+        static::$instance->capsule->setAsGlobal();
+        static::$instance->capsule->bootEloquent();
     }
 
-    public static function disconnect()
+    public static function reconnect()
     {
-        DB::connection()->disconnect();
+        static::$instance->capsule->getDatabaseManager()->reconnect();
     }
 }
