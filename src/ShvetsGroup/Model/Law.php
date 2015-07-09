@@ -11,6 +11,7 @@ class Law extends Model
     const NO_TEXT = 10;
 
     const NOT_DOWNLOADED = 0;
+    const DOWNLOADED_BUT_NEEDS_UPDATE = 4;
     const DOWNLOADED_CARD = 5;
     const DOWNLOADED_REVISIONS = 10;
     const DOWNLOADED_RELATIONS = 15;
@@ -18,6 +19,6 @@ class Law extends Model
 
 
     public $timestamps = false;
-    public $fillable = ['date', 'status', 'has_text'];
+    public $fillable = ['id', 'date', 'status', 'has_text'];
 }
 
