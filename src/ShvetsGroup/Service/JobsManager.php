@@ -2,7 +2,6 @@
 
 namespace ShvetsGroup\Service;
 
-use Symfony\Component\Config\Definition\Exception\Exception;
 use \Symfony\Component\DependencyInjection\ContainerAware;
 use Illuminate\Database\Capsule\Manager as DB;
 use ShvetsGroup\Model\Job;
@@ -153,22 +152,20 @@ class JobsManager extends ContainerAware
     {
         $job = null;
 
-        DB::beginTransaction();
-
-        $query = Job::where('claimed', 0)->where('finished', 0)->orderBy('id');
-        if ($group) {
-            $query->where('group', $group);
-        }
-        if ($service) {
-            $query->where('service', $service);
-        }
-        if ($method) {
-            $query->where('method', $method);
-        }
-        $job = $query->first();
-        $job->update(['claimed' => time()]);
-
-        DB::commit();
+        DB::transaction(function () use ($group, $service, $method, &$job) {
+            $query = Job::where('claimed', 0)->where('finished', 0)->orderBy('id');
+            if ($group) {
+                $query->where('group', $group);
+            }
+            if ($service) {
+                $query->where('service', $service);
+            }
+            if ($method) {
+                $query->where('method', $method);
+            }
+            $job = $query->first();
+            $job->update(['claimed' => time()]);
+        });
 
         return $job;
     }
