@@ -3,7 +3,7 @@
 namespace ShvetsGroup\Command;
 
 use ShvetsGroup\Service\JobsManager;
-use ShvetsGroup\Service\Proxy;
+use ShvetsGroup\Service\Proxy\ProxyManager;
 use Symfony\Component\Console as Console;
 
 class CronCommand extends Console\Command\Command
@@ -29,17 +29,17 @@ class CronCommand extends Console\Command\Command
     private $jobsManager;
 
     /**
-     * @var Proxy
+     * @var ProxyManager
      */
-    private $proxy;
+    private $proxyManager;
 
     /**
      * @param DiscoverCommand $discoverer
      * @param DownloadCommand $downloader
      * @param JobsManager  $jobsManager
-     * @param Proxy $proxy
+     * @param ProxyManager $proxyManager
      */
-    public function __construct($discoverer, $downloader, $jobsManager, $proxy)
+    public function __construct($discoverer, $downloader, $jobsManager, $proxyManager)
     {
         parent::__construct('cron');
 
@@ -51,7 +51,7 @@ class CronCommand extends Console\Command\Command
         $this->discoverer = $discoverer;
         $this->downloader = $downloader;
         $this->jobsManager = $jobsManager;
-        $this->proxy = $proxy;
+        $this->proxyManager = $proxyManager;
     }
 
     /**
@@ -78,11 +78,11 @@ class CronCommand extends Console\Command\Command
 
         if ($input->getOption('proxy')) {
             $this->workers = $input->getOption('proxy');
-            $this->proxy->useProxy(true);
+            $this->proxyManager->useProxy(true);
         }
 
-        if ($this->proxy->useProxy()) {
-            $this->proxy->connect($this->workers, $input->getOption('kill_old_proxies'));
+        if ($this->proxyManager->useProxy()) {
+            $this->proxyManager->connect($this->workers, $input->getOption('kill_old_proxies'));
         }
 
         if (!$this->jobsManager->count()) {

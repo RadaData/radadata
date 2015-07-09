@@ -1,13 +1,10 @@
 <?php
 
-namespace ShvetsGroup\Service;
+namespace ShvetsGroup\Service\Proxy;
 
-use Aws\Ec2\Ec2Client;
-use GuzzleHttp\Promise;
 use Illuminate\Database\Capsule\Manager as DB;
-use ShvetsGroup\Service\IProxyProvider;
 
-class Proxy
+class ProxyManager
 {
 
     /**
@@ -90,12 +87,12 @@ class Proxy
     /**
      * Get a proxy address from the pool. If proxy config is disabled, 'localhost' will be returned.
      *
-     * @return string Proxy string (for example '127.0.0.1:2345').
+     * @return object Proxy object (for example {'address': '127.0.0.1:2345', 'ip': '34.23.12.1'}).
      */
     public function getProxy()
     {
         if (!$this->useProxy()) {
-            return 'localhost';
+            return json_decode(json_encode(['address' => 'localhost', 'ip' => 'localhost']), FALSE);
         }
 
         try {
@@ -106,12 +103,30 @@ class Proxy
                 return $this->selectProxy();
             }
             else {
-                return $this->proxy->address;
+                return $this->proxy;
             }
         } catch (\Exception $e) {
             _log($e->getMessage(), 'red');
             die();
         }
+    }
+
+    /**
+     * Get proxy connection address.
+     * @return string
+     */
+    public function getProxyAddress()
+    {
+        return $this->getProxy()->address;
+    }
+
+    /**
+     * Get proxy real IP.
+     * @return string
+     */
+    public function getProxyIp()
+    {
+        return $this->getProxy()->ip;
     }
 
     /**
@@ -137,7 +152,7 @@ class Proxy
         });
         _log('Proxy claimed: ' . $this->proxy->ip);
 
-        return $this->proxy->address;
+        return $this->proxy;
     }
 
     /**
@@ -145,8 +160,12 @@ class Proxy
      */
     public function releaseProxy()
     {
+        if (!$this->useProxy()) {
+            return;
+        }
+
         _log('Proxy released: ' . $this->proxy->ip);
-        DB::table('proxy')->where('address', $this->proxy->address)->update(['in_use' => 0, 'last_used' => round(microtime(true) * 100)]);
+        DB::table('proxy')->where('address', $this->getProxyAddress())->update(['in_use' => 0, 'last_used' => round(microtime(true) * 100)]);
         $this->proxy = null;
     }
 
@@ -172,6 +191,10 @@ class Proxy
      */
     public function banProxy()
     {
+        if (!$this->useProxy()) {
+            return;
+        }
+
         _log('Proxy ' . $this->proxy->ip . ' banned.', 'red');
         DB::table('proxy')->where('address', $this->proxy->address)->delete();
         $this->proxyProvider->ban($this->proxy->ip);

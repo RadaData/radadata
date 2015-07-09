@@ -1,6 +1,6 @@
 <?php
 
-namespace ShvetsGroup\Service;
+namespace ShvetsGroup\Service\Proxy;
 
 interface IProxyProvider
 {

@@ -4,7 +4,7 @@ namespace ShvetsGroup\Command;
 
 use Symfony\Component\Console as Console;
 use ShvetsGroup\Service\JobsManager;
-use ShvetsGroup\Service\Proxy;
+use ShvetsGroup\Service\Proxy\ProxyManager;
 
 class CleanupCommand extends Console\Command\Command
 {
@@ -15,15 +15,15 @@ class CleanupCommand extends Console\Command\Command
     private $jobsManager;
 
     /**
-     * @var Proxy
+     * @var ProxyManager
      */
     private $proxy;
 
     /**
      * @param JobsManager $jobsManager
-     * @param Proxy $proxy
+     * @param ProxyManager $proxyManager
      */
-    public function __construct($jobsManager, $proxy)
+    public function __construct($jobsManager, $proxyManager)
     {
         parent::__construct('cleanup');
 
@@ -33,7 +33,7 @@ class CleanupCommand extends Console\Command\Command
         $this->addOption('jobs', 'j', Console\Input\InputOption::VALUE_NONE, 'Flush all jobs.');
 
         $this->jobsManager = $jobsManager;
-        $this->proxy = $proxy;
+        $this->proxy = $proxyManager;
     }
 
     /**

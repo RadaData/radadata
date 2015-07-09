@@ -6,6 +6,7 @@ use \Symfony\Component\DependencyInjection\ContainerAware;
 use Illuminate\Database\Capsule\Manager as DB;
 use ShvetsGroup\Model\Job;
 use ShvetsGroup\Service\Database as DBManager;
+use ShvetsGroup\Service\Proxy\ProxyManager;
 
 declare(ticks = 1);
 
@@ -13,19 +14,19 @@ class JobsManager extends ContainerAware
 {
 
     /**
-     * @var Proxy
+     * @var ProxyManager
      */
-    private $proxy;
+    private $proxyManager;
 
     private $currentJobs = [];
     private $signalQueue = [];
 
     /**
-     * @param Proxy $proxy
+     * @param ProxyManager $proxyManager
      */
-    public function __construct($proxy)
+    public function __construct($proxyManager)
     {
-        $this->proxy = $proxy;
+        $this->proxyManager = $proxyManager;
         pcntl_signal(SIGCHLD, [$this, "childSignalHandler"]);
     }
 
@@ -102,7 +103,7 @@ class JobsManager extends ContainerAware
 
     public function realWorkersCount($workers_count)
     {
-        return min($workers_count, $this->proxy->count());
+        return min($workers_count, $this->proxyManager->count());
     }
 
     public function childSignalHandler($signo, $pid = null, $status = null)

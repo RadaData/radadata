@@ -3,6 +3,7 @@
 namespace ShvetsGroup\Service;
 
 use JonnyW\PhantomJs\Client as PJClient;
+use ShvetsGroup\Service\Proxy\ProxyManager;
 
 class Downloader
 {
@@ -23,20 +24,20 @@ class Downloader
     private $identity;
 
     /**
-     * @var Proxy
+     * @var ProxyManager
      */
-    private $proxy;
+    private $proxyManager;
 
     /**
      * @param string   $downloadsDir
      * @param Identity $identity
-     * @param Proxy    $proxy
+     * @param ProxyManager    $proxyManager
      */
-    public function __construct($downloadsDir, $identity, $proxy)
+    public function __construct($downloadsDir, $identity, $proxyManager)
     {
         $this->downloadsDir = BASE_PATH . $downloadsDir;
         $this->identity = $identity;
-        $this->proxy = $proxy;
+        $this->proxyManager = $proxyManager;
     }
 
     /**
@@ -68,8 +69,7 @@ class Downloader
         $save_as = $options['save_as'] ? $this->fullURL($options['save_as']) : null;
 
         $output = '';
-        $this->proxy->getProxy();
-        $output .= ($this->proxy->proxy->address . '/' . $this->proxy->proxy->ip . ' → ' . $this->shortURL($url) . ': ');
+        $output .= ($this->proxyManager->getProxyAddress() . '/' . $this->proxyManager->getProxyIp() . ' → ' . $this->shortURL($url) . ': ');
         $style = 'default';
 
         if ($this->isDownloaded($save_as ?: $url) && !$options['re_download']) {
@@ -77,7 +77,7 @@ class Downloader
             $output .= ('* ');
             _log($output);
 
-            $this->proxy->releaseProxy();
+            $this->proxyManager->releaseProxy();
             return $html;
         }
 
@@ -93,7 +93,7 @@ class Downloader
                         if (strpos($result['html'], 'Error 403') !== false || strpos($result['html'], 'Доступ заборонено') !== false || strpos($result['html'], 'Ваш IP автоматично заблоковано')) {
                             $output .= ('-S403 ');
                             _log($output, 'red');
-                            $this->proxy->banProxy();
+                            $this->proxyManager->banProxy();
                             die();
                         }
 
@@ -129,14 +129,14 @@ class Downloader
                         $output .= ('@' . $result['status'] . ' ');
                         _log($output, $style);
 
-                        $this->proxy->releaseProxy();
+                        $this->proxyManager->releaseProxy();
 
                         return $result['html'];
                     case 403:
                         $output .= ('-S' . $result['status'] . ' ');
                         _log($output, 'red');
                         if (strpos($result['html'], 'Ви потрапили до забороненого ресурсу') !== false) {
-                            $this->proxy->banProxy();
+                            $this->proxyManager->banProxy();
                             die();
                         }
                         $attempt++;
@@ -162,7 +162,7 @@ class Downloader
         }
 
         _log($output, 'red');
-        $this->proxy->releaseProxy();
+        $this->proxyManager->releaseProxy();
         throw new \Exception('Resource is not available (a).');
     }
 
@@ -177,8 +177,8 @@ class Downloader
     private function doDownload($url, $delay = 5)
     {
         $client = PJClient::getInstance();
-        if ($this->proxy->useProxy()) {
-            $client->addOption('--proxy=' . $this->proxy->getProxy());
+        if ($this->proxyManager->useProxy()) {
+            $client->addOption('--proxy=' . $this->proxyManager->getProxyAddress());
         }
         $client->addOption('--load-images=false');
         $request = $client->getMessageFactory()->createRequest($url);

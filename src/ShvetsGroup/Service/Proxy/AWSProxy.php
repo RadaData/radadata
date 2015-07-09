@@ -1,6 +1,6 @@
 <?php
 
-namespace ShvetsGroup\Service;
+namespace ShvetsGroup\Service\Proxy;
 
 use Aws\Ec2\Ec2Client;
 use GuzzleHttp\Promise;

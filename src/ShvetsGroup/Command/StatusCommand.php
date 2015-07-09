@@ -4,19 +4,27 @@ namespace ShvetsGroup\Command;
 
 use Symfony\Component\Console as Console;
 
+use ShvetsGroup\Service\JobsManager;
+use ShvetsGroup\Service\Proxy\ProxyManager;
+
 class StatusCommand extends Console\Command\Command
 {
     /**
-     * @var \ShvetsGroup\Service\JobsManager
+     * @var JobsManager
      */
     private $jobsManager;
 
     /**
-     * @param string   $downloadsDir
-     * @param \ShvetsGroup\Service\JobsManager $jobsManager
-     * @param \ShvetsGroup\Service\Proxy $proxy
+     * @var ProxyManager
      */
-    public function __construct($downloadsDir, $jobsManager, $proxy)
+    private $proxyManager;
+
+    /**
+     * @param string   $downloadsDir
+     * @param JobsManager $jobsManager
+     * @param ProxyManager $proxyManager
+     */
+    public function __construct($downloadsDir, $jobsManager, $proxyManager)
     {
         parent::__construct('status');
 
@@ -24,7 +32,7 @@ class StatusCommand extends Console\Command\Command
 
         $this->downloadsDir = BASE_PATH . $downloadsDir;
         $this->jobsManager = $jobsManager;
-        $this->proxy = $proxy;
+        $this->proxyManager = $proxyManager;
     }
 
     /**

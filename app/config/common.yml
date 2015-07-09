@@ -8,32 +8,32 @@ services:
 
     jobs_manager:
         class:     \ShvetsGroup\Service\JobsManager
-        arguments: [ @proxy ]
+        arguments: [ @proxy_manager ]
         calls:
           - [ setContainer, [ @service_container ] ]
 
     downloader:
         class:     \ShvetsGroup\Service\Downloader
-        arguments: [ '%downloads_dir%', @identity, @proxy ]
+        arguments: [ '%downloads_dir%', @identity, @proxy_manager ]
 
     identity:
         class:     \ShvetsGroup\Service\Identity
 
     aws_proxy:
-        class:     \ShvetsGroup\Service\AWSProxy
+        class:     \ShvetsGroup\Service\Proxy\AWSProxy
         arguments: [ '%aws%' ]
 
     list_proxy:
-        class:     \ShvetsGroup\Service\ListProxy
+        class:     \ShvetsGroup\Service\Proxy\ListProxy
         arguments: [ '%proxy_list%' ]
 
-    proxy:
-        class:     \ShvetsGroup\Service\Proxy
+    proxy_manager:
+        class:     \ShvetsGroup\Service\Proxy\ProxyManager
         arguments: [ '%use_proxy%', @list_proxy ]
 
     status_command:
        class:     \ShvetsGroup\Command\StatusCommand
-       arguments: [ '%downloads_dir%', @jobs_manager, @proxy ]
+       arguments: [ '%downloads_dir%', @jobs_manager, @proxy_manager ]
 
     discover_command:
         class:     \ShvetsGroup\Command\DiscoverCommand
@@ -53,9 +53,9 @@ services:
 
     cleanup_command:
        class:     \ShvetsGroup\Command\CleanupCommand
-       arguments: [ @jobs_manager, @proxy ]
+       arguments: [ @jobs_manager, @proxy_manager ]
 
     cron_command:
        class:     \ShvetsGroup\Command\CronCommand
-       arguments: [ @discover_command, @download_command, @jobs_manager, @proxy ]
+       arguments: [ @discover_command, @download_command, @jobs_manager, @proxy_manager ]
 
