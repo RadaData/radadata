@@ -60,21 +60,24 @@ class DownloadCommand extends Console\Command\Command
     {
         $this->jobsManager->deleteAll('download');
 
-        Law::where('status', Law::NOT_DOWNLOADED)->chunk(200, function($laws) {
+        Law::where('status', '<', Law::DOWNLOADED_CARD)->chunk(200, function($laws) {
             foreach ($laws as $law) {
-                $this->jobsManager->add('download_command', 'downloadCard', ['id' => $law->id], 'download');
+                $this->jobsManager->add('download_command', 'downloadCard', [
+                    'id' => $law->id,
+                    're_download' => $law->status == Law::DOWNLOADED_BUT_NEEDS_UPDATE
+                ], 'download');
             }
         });
-        Law::where('status', Law::DOWNLOADED_CARD)->chunk(200, function($laws) {
-            foreach ($laws as $law) {
-                $this->jobsManager->add('download_command', 'downloadRevisions', ['id' => $law->id], 'download');
-            }
-        });
-        Law::where('status', Law::DOWNLOADED_REVISIONS)->chunk(200, function($laws) {
-            foreach ($laws as $law) {
-                $this->jobsManager->add('download_command', 'downloadRelations', ['id' => $law->id], 'download');
-            }
-        });
+        //Law::where('status', Law::DOWNLOADED_CARD)->chunk(200, function($laws) {
+        //    foreach ($laws as $law) {
+        //        $this->jobsManager->add('download_command', 'downloadRevisions', ['id' => $law->id], 'download');
+        //    }
+        //});
+        //Law::where('status', Law::DOWNLOADED_REVISIONS)->chunk(200, function($laws) {
+        //    foreach ($laws as $law) {
+        //        $this->jobsManager->add('download_command', 'downloadRelations', ['id' => $law->id], 'download');
+        //    }
+        //});
     }
 
     /**
@@ -85,23 +88,32 @@ class DownloadCommand extends Console\Command\Command
     function downloadLaw($id)
     {
         $this->jobsManager->add('download_command', 'downloadCard', ['id' => $id], 'download');
-        $this->jobsManager->add('download_command', 'downloadRevisions', ['id' => $id], 'download');
-        $this->jobsManager->add('download_command', 'downloadRelations', ['id' => $id], 'download');
+        //$this->jobsManager->add('download_command', 'downloadRevisions', ['id' => $id], 'download');
+        //$this->jobsManager->add('download_command', 'downloadRelations', ['id' => $id], 'download');
     }
 
     /**
      * Download a specific law's card page.
      *
      * @param string $id Law ID.
+     * @param bool $re_download Whether or not to re-download card page.
      */
-    function downloadCard($id)
+    function downloadCard($id, $re_download = false)
     {
         try {
             $law = Law::find($id);
 
-            $html = download('/laws/card/' . $id, ['re_download' => $this->re_download, 'save_as' => '/laws/show/' . $id . '/card']);
+            $html = download('/laws/card/' . $id, ['re_download' => $re_download || $this->re_download, 'save_as' => '/laws/show/' . $id . '/card']);
 
             // TODO: parse card data
+
+            // 1. Set card meta
+            // 2. Extract all revisions history and all of them to revisions table with not downloaded status
+            // 3. If this is a new law (law status NOT_DOWNLOADED) AND if there are changing relations,
+            // - download relations page and
+            // - for each law:
+            //   - mark as needs update
+            //   - add downloadCard job for each of them with re_download parameter
 
             $law->update(['status' => Law::DOWNLOADED_CARD]);
 
