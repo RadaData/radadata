@@ -31,6 +31,6 @@ class Database
 
     public static function disconnect()
     {
-        DB::connection()->disconnect();
+        DB::connection()->reconnect();
     }
 }
