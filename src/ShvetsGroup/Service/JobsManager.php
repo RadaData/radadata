@@ -170,8 +170,7 @@ class JobsManager extends ContainerAware
             });
         }
         catch (\Exception $e) {
-            print(111111111);
-            die();
+            return $this->fetch($group, $service, $method);
         }
 
         return $job;
