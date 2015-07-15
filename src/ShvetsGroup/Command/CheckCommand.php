@@ -2,7 +2,7 @@
 
 namespace ShvetsGroup\Command;
 
-use ShvetsGroup\Model\Law;
+use ShvetsGroup\Model\Laws\Law;
 use Symfony\Component\Console as Console;
 
 class CheckCommand extends Console\Command\Command

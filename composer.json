@@ -5,7 +5,10 @@
     "symfony/console": "~2.7",
     "symfony/dependency-injection": "~2.7",
     "illuminate/database": "*",
-    "jonnyw/php-phantomjs": "3.*"
+    "jonnyw/php-phantomjs": "3.*",
+    "phpunit/phpunit": "3.7.*",
+    "phpunit/dbunit": ">=1.2",
+    "symfony/css-selector": "*"
   },
   "scripts": {
     "post-install-cmd": [
@@ -16,7 +19,10 @@
     ]
   },
   "autoload": {
-    "psr-4": {"ShvetsGroup\\": "src/ShvetsGroup/"}
+    "psr-0": {"ShvetsGroup": "src/"}
+  },
+  "autoload-dev": {
+    "psr-0": { "ShvetsGroup\\Tests": "tests/" }
   },
   "config": {
     "bin-dir": "./bin"

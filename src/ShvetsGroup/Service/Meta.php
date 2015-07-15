@@ -27,6 +27,7 @@ class Meta
      *              ['group_name'] string
      *              ['website']    string
      *              ['url']        string
+     *              ['international'] string
      */
     public function getIssuers()
     {
@@ -50,12 +51,15 @@ class Meta
         DB::table('issuers')->delete();
         foreach ($issuers as $issuer) {
             DB::table('issuers')->insert(
-                ['id'         => $issuer->id,
-                 'name'       => $issuer->name,
-                 'full_name'  => $issuer->full_name,
-                 'group_name' => $issuer->group_name,
-                 'website'    => $issuer->website,
-                 'url'        => $issuer->url]
+                [
+                    'id'            => $issuer->id,
+                    'name'          => $issuer->name,
+                    'full_name'     => $issuer->full_name,
+                    'group_name'    => $issuer->group_name,
+                    'website'       => $issuer->website,
+                    'url'           => $issuer->url,
+                    'international' => $issuer->international
+                ]
             );
         }
     }
@@ -70,7 +74,7 @@ class Meta
         DB::table('types')->delete();
         foreach ($types as $type) {
             DB::table('types')->insert(
-                ['id'  => $type->id, 'name' => $type->name]
+                ['id' => $type->id, 'name' => $type->name]
             );
         }
     }
@@ -85,7 +89,7 @@ class Meta
         DB::table('states')->delete();
         foreach ($states as $state) {
             DB::table('states')->insert(
-                ['id'  => $state->id, 'name' => $state->name]
+                ['id' => $state->id, 'name' => $state->name]
             );
         }
     }
@@ -101,10 +105,10 @@ class Meta
         $list = crawler($html);
 
         // The loop here is to parse both domestic and international issuers.
+        $issuers = [];
         for ($i = 1; $i <= 2; $i++) {
             $XPATH = '//*[@id="page"]/div[2]/table/tbody/tr[1]/td[3]/div/div[2]/table[' . $i . ']/tbody/tr/td/table/tbody/tr';
             $group = null;
-            $issuers = [];
             $list->filterXPath($XPATH)->each(
                 function ($node) use (&$issuers, &$group, $i) {
                     $cells = $node->filterXPath('//td');
@@ -119,16 +123,15 @@ class Meta
                         $issuer->url = $issuer_link->attr('href');
                         $issuer->id = str_replace('/laws/main/', '', $issuer->url);
                         $issuer->group_name = $group;
-                        $issuer->name = better_trim($issuer_link->text());
-                        $issuer->full_name = null;
-                        if (preg_match('|(.*?)(:? \((.*?)\))?$|', $issuer->name, $match)) {
-                            if (isset($match[2])) {
-                                $issuer->name = $match[2];
-                                $issuer->full_name = $match[1];
-                            }
+                        $issuer->name = better_trim($issuer_link->filterXPath('//b')->text());
+                        $issuer->full_name = preg_replace('|<b>.*?</b> *|', '', $issuer_link->filterXPath('//font')->html());
+                        if ($issuer->full_name) {
+                            $issuer->full_name = preg_replace('|^\((.*?)\)$|', '$1', $issuer->full_name);
+                            // Swap values.
+                            list($issuer->name,$issuer->full_name) = array($issuer->full_name, $issuer->name);
                         }
                         $issuer->website = $issuer_link->count() == 2 ? $issuer_link->last()->attr('href') : null;
-                        $issuer->international = $i;
+                        $issuer->international = $i - 1;
                         $issuers[$issuer->name] = $issuer;
                     }
                 }

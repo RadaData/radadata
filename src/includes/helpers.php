@@ -86,6 +86,18 @@ function container()
 	return $container;
 }
 
+function max_date()
+{
+	return container()->getParameter('max_crawl_date') ?: '3000-01-01';
+}
+
+/**
+ * @return \ShvetsGroup\Service\JobsManager
+ */
+function job_manager() {
+	return container()->get('jobManager');
+}
+
 /**
  * @return \ShvetsGroup\Service\Downloader
  */
@@ -96,6 +108,16 @@ function downloader() {
 function download($url, $options = [])
 {
 	return downloader()->download($url, $options);
+}
+
+function downloadList($url, $options = [])
+{
+	return downloader()->downloadList($url, $options);
+}
+
+function downloadCard($url, $options = [])
+{
+	return downloader()->downloadCard($url, $options);
 }
 
 function shortURL($url)

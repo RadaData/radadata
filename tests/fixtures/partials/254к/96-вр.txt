@@ -1,0 +1,316 @@
+<a name="Card"></a><h2 class="hdr1">Картка документа</h2>
+<h1 class="hdr2">Конституція України</h1>
+<dl class="nam">
+<dt class="num">Види:</dt>
+<dd>Конституція</dd>
+<dd>Закон</dd>
+
+<dt class="num">Видавники:</dt>
+<dd><font color="#006600">Верховна Рада України</font></dd>
+<dt class="num">Дати:</dt>
+<dd>від <font color="#004499">28.06.1996</font>
+</dd>
+<dt class="num">Номери:</dt>
+<dd>№ <b>254к/96-ВР</b>
+</dd>
+<dt class="num">Стан:</dt>
+<dd><font color="#0000CC">Чинний</font></dd>
+<dt class="num">Ідентифікатор:</dt>
+<dd class="num"><b><a href="http://zakon.rada.gov.ua/go/254%D0%BA/96-%D0%B2%D1%80"><font color="#006600">254к/96-вр</font></a></b></dd>
+</dl>
+<a name="Files"></a><h2 class="hdr1">Документи та файли</h2>
+<dl class="nam">
+<dt>
+<img src="http://zakonst.rada.gov.ua/images/text/perv1.gif" title="Первинний акт"><a href="#Current">Текст документа</a> <span class="err"> зараз активно </span>, <font class="num" color="#999999">185 кб / 4 стор.</font>
+</dt>
+<dd>Тлумачення від <span style="color:#004499">15.05.2014</span>, підстава - <a href="/laws/show/v005p710-14" target="_blank">v005p710-14</a>
+</dd>
+<dt>
+<img src="http://zakonst.rada.gov.ua/images/text/ed.gif" title="Редакції документа"><a href="#History">Редакції документа</a> <span class="num">(7 редакцій)</span>
+</dt>
+<dt>
+<img src="http://zakonst.rada.gov.ua/images/text/ann.gif" title="Анотація"><a href="/laws/anot/254%D0%BA/96-%D0%B2%D1%80" target="_blank">The Constitution of Ukraine</a> </dt>
+<dd>Текст резюме від <span style="color:#004499">01.12.2004</span>
+</dd>
+</dl>
+<a name="History"></a><h2 class="hdr1">Історія документа та редакції</h2>
+<dl class="nam">
+<dt class="dat">
+<a href="/laws/show/254%D0%BA/96-%D0%B2%D1%80/ed19960628" name="#1"><b><span style="color: #004499">28.06.1996</span></b></a>
+<img src="http://zakonst.rada.gov.ua/images/docs.gif" title="Документ"><span class="num" style="color:#999999">перша редакція, 109 кб / 3 стор., <a href="/laws/show/254%D0%BA/96-%D0%B2%D1%80/ed19960628">перейти »</a></span>
+</dt>
+<dd>Прийняття</dd>
+<dd>Набрання чинності</dd>
+<dt class="dat"><span style="color: #004499">13.05.1997</span></dt>
+<dd>Тлумачення, підстава - <a href="/laws/show/v001p710-97" target="_blank">v001p710-97</a>
+</dd>
+<dt class="dat"><span style="color: #004499">03.10.1997</span></dt>
+<dd>Тлумачення, підстава - <a href="/laws/show/v004p710-97" target="_blank">v004p710-97</a>
+</dd>
+<dt class="dat"><span style="color: #004499">25.11.1997</span></dt>
+<dd>Тлумачення, підстава - <a href="/laws/show/v006p710-97" target="_blank">v006p710-97</a>
+</dd>
+<dt class="dat"><span style="color: #004499">25.12.1997</span></dt>
+<dd>Тлумачення, підстава - <a href="/laws/show/v009p710-97" target="_blank">v009p710-97</a>
+</dd>
+<dt class="dat"><span style="color: #004499">09.06.1998</span></dt>
+<dd>Тлумачення, підстава - <a href="/laws/show/v008p710-98" target="_blank">v008p710-98</a>
+</dd>
+<dt class="dat"><span style="color: #004499">07.07.1998</span></dt>
+<dd>Тлумачення, підстава - <a href="/laws/show/v011p710-98" target="_blank">v011p710-98</a>
+</dd>
+<dt class="dat"><span style="color: #004499">09.02.1999</span></dt>
+<dd>Тлумачення, підстава - <a href="/laws/show/v001p710-99" target="_blank">v001p710-99</a>
+</dd>
+<dt class="dat"><span style="color: #004499">19.05.1999</span></dt>
+<dd>Тлумачення, підстава - <a href="/laws/show/v004p710-99" target="_blank">v004p710-99</a>
+</dd>
+<dt class="dat"><span style="color: #004499">06.07.1999</span></dt>
+<dd>Тлумачення, підстава - <a href="/laws/show/v007p710-99" target="_blank">v007p710-99</a>
+</dd>
+<dt class="dat"><span style="color: #004499">27.10.1999</span></dt>
+<dd>Тлумачення, підстава - <a href="/laws/show/v009p710-99" target="_blank">v009p710-99</a>
+</dd>
+<dt class="dat"><span style="color: #004499">14.12.1999</span></dt>
+<dd>Тлумачення, підстава - <a href="/laws/show/v010p710-99" target="_blank">v010p710-99</a>
+</dd>
+<dt class="dat"><span style="color: #004499">11.04.2000</span></dt>
+<dd>Тлумачення, підстава - <a href="/laws/show/v004p710-00" target="_blank">v004p710-00</a>
+</dd>
+<dt class="dat"><span style="color: #004499">19.04.2000</span></dt>
+<dd>Тлумачення, підстава - <a href="/laws/show/v006p710-00" target="_blank">v006p710-00</a>
+</dd>
+<dt class="dat"><span style="color: #004499">16.11.2000</span></dt>
+<dd>Тлумачення, підстава - <a href="/laws/show/v013p710-00" target="_blank">v013p710-00</a>
+</dd>
+<dt class="dat"><span style="color: #004499">14.12.2000</span></dt>
+<dd>Тлумачення, підстава - <a href="/laws/show/v015p710-00" target="_blank">v015p710-00</a>
+</dd>
+<dt class="dat"><span style="color: #004499">28.03.2001</span></dt>
+<dd>Тлумачення, підстава - <a href="/laws/show/v002p710-01" target="_blank">v002p710-01</a>
+</dd>
+<dt class="dat"><span style="color: #004499">19.04.2001</span></dt>
+<dd>Тлумачення, підстава - <a href="/laws/show/v004p710-01" target="_blank">v004p710-01</a>
+</dd>
+<dt class="dat"><span style="color: #004499">17.05.2001</span></dt>
+<dd>Тлумачення, підстава - <a href="/laws/show/v005p710-01" target="_blank">v005p710-01</a>
+</dd>
+<dt class="dat"><span style="color: #004499">30.05.2001</span></dt>
+<dd>Тлумачення, підстава - <a href="/laws/show/v007p710-01" target="_blank">v007p710-01</a>
+</dd>
+<dt class="dat"><span style="color: #004499">13.07.2001</span></dt>
+<dd>Тлумачення, підстава - <a href="/laws/show/v011p710-01" target="_blank">v011p710-01</a>
+</dd>
+<dt class="dat"><span style="color: #004499">16.10.2001</span></dt>
+<dd>Тлумачення, підстава - <a href="/laws/show/v014p710-01" target="_blank">v014p710-01</a>
+</dd>
+<dt class="dat"><span style="color: #004499">20.03.2002</span></dt>
+<dd>Тлумачення, підстава - <a href="/laws/show/v004p710-02" target="_blank">v004p710-02</a>
+</dd>
+<dt class="dat"><span style="color: #004499">27.03.2002</span></dt>
+<dd>Тлумачення, підстава - <a href="/laws/show/v007p710-02" target="_blank">v007p710-02</a>
+</dd>
+<dt class="dat"><span style="color: #004499">07.05.2002</span></dt>
+<dd>Тлумачення, підстава - <a href="/laws/show/v008p710-02" target="_blank">v008p710-02</a>
+</dd>
+<dt class="dat"><span style="color: #004499">29.05.2002</span></dt>
+<dd>Тлумачення, підстава - <a href="/laws/show/v010p710-02" target="_blank">v010p710-02</a>
+</dd>
+<dt class="dat"><span style="color: #004499">18.06.2002</span></dt>
+<dd>Тлумачення, підстава - <a href="/laws/show/v012p710-02" target="_blank">v012p710-02</a>
+</dd>
+<dt class="dat"><span style="color: #004499">09.07.2002</span></dt>
+<dd>Тлумачення, підстава - <a href="/laws/show/v015p710-02" target="_blank">v015p710-02</a>
+</dd>
+<dt class="dat"><span style="color: #004499">17.10.2002</span></dt>
+<dd>Тлумачення, підстава - <a href="/laws/show/v016p710-02" target="_blank">v016p710-02</a>, <a href="/laws/show/v017p710-02" target="_blank">v017p710-02</a>
+</dd>
+<dt class="dat"><span style="color: #004499">28.01.2003</span></dt>
+<dd>Тлумачення, підстава - <a href="/laws/show/v002p710-03" target="_blank">v002p710-03</a>
+</dd>
+<dt class="dat"><span style="color: #004499">05.03.2003</span></dt>
+<dd>Тлумачення, підстава - <a href="/laws/show/v005p710-03" target="_blank">v005p710-03</a>
+</dd>
+<dt class="dat"><span style="color: #004499">26.06.2003</span></dt>
+<dd>Тлумачення, підстава - <a href="/laws/show/v012p710-03" target="_blank">v012p710-03</a>
+</dd>
+<dt class="dat"><span style="color: #004499">14.10.2003</span></dt>
+<dd>Тлумачення, підстава - <a href="/laws/show/v016p710-03" target="_blank">v016p710-03</a>
+</dd>
+<dt class="dat"><span style="color: #004499">10.12.2003</span></dt>
+<dd>Тлумачення, підстава - <a href="/laws/show/v019p710-03" target="_blank">v019p710-03</a>
+</dd>
+<dt class="dat"><span style="color: #004499">25.12.2003</span></dt>
+<dd>Тлумачення, підстава - <a href="/laws/show/v021p710-03" target="_blank">v021p710-03</a>, <a href="/laws/show/v022p710-03" target="_blank">v022p710-03</a>
+</dd>
+<dt class="dat"><span style="color: #004499">04.03.2004</span></dt>
+<dd>Тлумачення, підстава - <a href="/laws/show/v005p710-04" target="_blank">v005p710-04</a>
+</dd>
+<dt class="dat"><span style="color: #004499">19.05.2004</span></dt>
+<dd>Тлумачення, підстава - <a href="/laws/show/v011p710-04" target="_blank">v011p710-04</a>
+</dd>
+<dt class="dat"><span style="color: #004499">01.12.2004</span></dt>
+<dd>Тлумачення, підстава - <a href="/laws/show/v019p710-04" target="_blank">v019p710-04</a>
+</dd>
+<dt class="dat"><span style="color: #004499">05.10.2005</span></dt>
+<dd>Тлумачення, підстава - <a href="/laws/show/v006p710-05" target="_blank">v006p710-05</a>
+</dd>
+<dt class="dat"><span style="color: #004499">13.10.2005</span></dt>
+<dd>Тлумачення, підстава - <a href="/laws/show/v009p710-05" target="_blank">v009p710-05</a>
+</dd>
+<dt class="dat">
+<a href="/laws/show/254%D0%BA/96-%D0%B2%D1%80/ed20060101" name="#2"><b><span style="color: #004499">01.01.2006</span></b></a>
+<img src="http://zakonst.rada.gov.ua/images/docs.gif" title="Документ"><span class="num" style="color:#999999">попередня редакція, 140 кб / 3 стор., <a href="/laws/show/254%D0%BA/96-%D0%B2%D1%80/ed20060101">перейти »</a></span>
+</dt>
+<dd>Редакція, підстава - <a href="/laws/show/2222-15" target="_blank">2222-15</a>
+</dd>
+<dt class="dat"><span style="color: #004499">09.10.2007</span></dt>
+<dd>Тлумачення, підстава - <a href="/laws/show/v0a7p710-07" target="_blank">v0a7p710-07</a>
+</dd>
+<dt class="dat"><span style="color: #004499">11.12.2007</span></dt>
+<dd>Тлумачення, підстава - <a href="/laws/show/va12p710-07" target="_blank">va12p710-07</a>, <a href="/laws/show/va11p710-07" target="_blank">va11p710-07</a>
+</dd>
+<dt class="dat"><span style="color: #004499">02.04.2008</span></dt>
+<dd>Тлумачення, підстава - <a href="/laws/show/v005p710-08" target="_blank">v005p710-08</a>
+</dd>
+<dt class="dat"><span style="color: #004499">16.04.2008</span></dt>
+<dd>Тлумачення, підстава - <a href="/laws/show/v006p710-08" target="_blank">v006p710-08</a>
+</dd>
+<dt class="dat"><span style="color: #004499">25.06.2008</span></dt>
+<dd>Тлумачення, підстава - <a href="/laws/show/v012p710-08" target="_blank">v012p710-08</a>
+</dd>
+<dt class="dat"><span style="color: #004499">17.09.2008</span></dt>
+<dd>Тлумачення, підстава - <a href="/laws/show/v016p710-08" target="_blank">v016p710-08</a>
+</dd>
+<dt class="dat"><span style="color: #004499">15.10.2008</span></dt>
+<dd>Тлумачення, підстава - <a href="/laws/show/v023p710-08" target="_blank">v023p710-08</a>
+</dd>
+<dt class="dat"><span style="color: #004499">27.11.2008</span></dt>
+<dd>Тлумачення, підстава - <a href="/laws/show/v026p710-08" target="_blank">v026p710-08</a>
+</dd>
+<dt class="dat"><span style="color: #004499">26.02.2009</span></dt>
+<dd>Тлумачення, підстава - <a href="/laws/show/v006p710-09" target="_blank">v006p710-09</a>
+</dd>
+<dt class="dat"><span style="color: #004499">16.04.2009</span></dt>
+<dd>Тлумачення, підстава - <a href="/laws/show/v007p710-09" target="_blank">v007p710-09</a>
+</dd>
+<dt class="dat"><span style="color: #004499">28.04.2009</span></dt>
+<dd>Тлумачення, підстава - <a href="/laws/show/v008p710-09" target="_blank">v008p710-09</a>
+</dd>
+<dt class="dat"><span style="color: #004499">30.09.2009</span></dt>
+<dd>Тлумачення, підстава - <a href="/laws/show/v023p710-09" target="_blank">v023p710-09</a>
+</dd>
+<dt class="dat"><span style="color: #004499">11.03.2010</span></dt>
+<dd>Тлумачення, підстава - <a href="/laws/show/v008p710-10" target="_blank">v008p710-10</a>, <a href="/laws/show/v007p710-10" target="_blank">v007p710-10</a>
+</dd>
+<dt class="dat"><span style="color: #004499">01.04.2010</span></dt>
+<dd>Тлумачення, підстава - <a href="/laws/show/v010p710-10" target="_blank">v010p710-10</a>
+</dd>
+<dt class="dat"><span style="color: #004499">06.04.2010</span></dt>
+<dd>Тлумачення, підстава - <a href="/laws/show/v011p710-10" target="_blank">v011p710-10</a>
+</dd>
+<dt class="dat">
+<a href="/laws/show/254%D0%BA/96-%D0%B2%D1%80/ed20100930" name="#3"><b><span style="color: #004499">30.09.2010</span></b></a>
+<img src="http://zakonst.rada.gov.ua/images/docs.gif" title="Документ"><span class="num" style="color:#999999">попередня редакція, 142 кб / 3 стор., <a href="/laws/show/254%D0%BA/96-%D0%B2%D1%80/ed20100930">перейти »</a></span>
+</dt>
+<dd>Редакція, підстава - <a href="/laws/show/v020p710-10" target="_blank">v020p710-10</a>
+</dd>
+<dt class="dat">
+<a href="/laws/show/254%D0%BA/96-%D0%B2%D1%80/ed20110204" name="#4"><b><span style="color: #004499">04.02.2011</span></b></a>
+<img src="http://zakonst.rada.gov.ua/images/docs.gif" title="Документ"><span class="num" style="color:#999999">попередня редакція, 146 кб / 3 стор., <a href="/laws/show/254%D0%BA/96-%D0%B2%D1%80/ed20110204">перейти »</a></span>
+</dt>
+<dd>Редакція, підстава - <a href="/laws/show/2952-17" target="_blank">2952-17</a>
+</dd>
+<dt class="dat"><span style="color: #004499">20.10.2011</span></dt>
+<dd>Тлумачення, підстава - <a href="/laws/show/v012p710-11" target="_blank">v012p710-11</a>
+</dd>
+<dt class="dat"><span style="color: #004499">08.12.2011</span></dt>
+<dd>Тлумачення, підстава - <a href="/laws/show/v016p710-11" target="_blank">v016p710-11</a>
+</dd>
+<dt class="dat"><span style="color: #004499">14.12.2011</span></dt>
+<dd>Тлумачення, підстава - <a href="/laws/show/v019p710-11" target="_blank">v019p710-11</a>
+</dd>
+<dt class="dat"><span style="color: #004499">20.01.2012</span></dt>
+<dd>Тлумачення, підстава - <a href="/laws/show/v002p710-12" target="_blank">v002p710-12</a>
+</dd>
+<dt class="dat"><span style="color: #004499">25.01.2012</span></dt>
+<dd>Тлумачення, підстава - <a href="/laws/show/v003p710-12" target="_blank">v003p710-12</a>
+</dd>
+<dt class="dat"><span style="color: #004499">12.04.2012</span></dt>
+<dd>Тлумачення, підстава - <a href="/laws/show/v009p710-12" target="_blank">v009p710-12</a>
+</dd>
+<dt class="dat"><span style="color: #004499">29.05.2013</span></dt>
+<dd>Тлумачення, підстава - <a href="/laws/show/v002p710-13" target="_blank">v002p710-13</a>
+</dd>
+<dt class="dat"><span style="color: #004499">12.06.2013</span></dt>
+<dd>Тлумачення, підстава - <a href="/laws/show/v004p710-13" target="_blank">v004p710-13</a>
+</dd>
+<dt class="dat">
+<a href="/laws/show/254%D0%BA/96-%D0%B2%D1%80/ed20131006" name="#5"><b><span style="color: #004499">06.10.2013</span></b></a>
+<img src="http://zakonst.rada.gov.ua/images/docs.gif" title="Документ"><span class="num" style="color:#999999">попередня редакція, 185 кб / 4 стор., <a href="/laws/show/254%D0%BA/96-%D0%B2%D1%80/ed20131006">перейти »</a></span>
+</dt>
+<dd>Редакція, підстава - <a href="/laws/show/586-18" target="_blank">586-18</a>
+</dd>
+<dt class="dat">
+<a href="/laws/show/254%D0%BA/96-%D0%B2%D1%80/ed20140222" name="#6"><b><span style="color: #004499">22.02.2014</span></b></a>
+<img src="http://zakonst.rada.gov.ua/images/docs.gif" title="Документ"><span class="num" style="color:#999999">попередня редакція, 185 кб / 4 стор., <a href="/laws/show/254%D0%BA/96-%D0%B2%D1%80/ed20140222">перейти »</a></span>
+</dt>
+<dd>Редакція</dd>
+<dt class="dat">
+<a href="/laws/show/254%D0%BA/96-%D0%B2%D1%80/ed20140302" name="#7"><b><span style="color: #004499">02.03.2014</span></b></a>
+<img src="http://zakonst.rada.gov.ua/images/docs.gif" title="Документ"><span class="num" style="color:#999999">попередня редакція, 184 кб / 4 стор., <a href="/laws/show/254%D0%BA/96-%D0%B2%D1%80/ed20140302">перейти »</a></span>
+</dt>
+<dd>Редакція, підстава - <a href="/laws/show/742-18" target="_blank">742-18</a>
+</dd>
+<dt class="dat" style="background:#E8F5FE" title="зараз активно">
+<a href="/laws/show/254%D0%BA/96-%D0%B2%D1%80" name="#0"><b><span style="color: #004499">15.05.2014</span></b></a>
+<img src="http://zakonst.rada.gov.ua/images/docs.gif" title="Документ"><span class="num" style="color:#999999">поточна редакція, 185 кб / 4 стор., <a href="/laws/show/254%D0%BA/96-%D0%B2%D1%80">перейти »</a></span>
+</dt>
+<dd>
+<a name="Current"></a><u>Тлумачення</u>, підстава - <a href="/laws/show/v005p710-14" target="_blank">v005p710-14</a>
+</dd>
+</dl>
+<a name="Links"></a><h2 class="hdr1">Пов'язані документи</h2>
+
+<dl class="num">
+<dt><p class="nam"><img src="http://zakonst.rada.gov.ua/images/text/link.gif" title="Пов'язані документи"><a href="/laws/main/l12934" target="_blank">Повний список пов'язаних документів</a> <font class="sml">[16263]</font></p></dt>
+<dt>Прямі зв'зки</dt>
+<dd>
+<img src="http://zakonst.rada.gov.ua/images/link_p.gif" title="Прямі зв'зки"><a href="/laws/main/l12934p2" target="_blank"><font color="#006600">Спричинив прийняття...</font></a> <font class="sml">[12]</font>
+</dd>
+<dd>
+<img src="http://zakonst.rada.gov.ua/images/link_p.gif" title="Прямі зв'зки"><a href="/laws/main/l12934p6" target="_blank"><font color="#006600">Відсилає до...</font></a> <font class="sml">[9]</font>
+</dd>
+<dt>Зворотні зв'зки</dt>
+<dd>
+<img src="http://zakonst.rada.gov.ua/images/link_z.gif" title="Зворотні зв'зки"><a href="/laws/main/l12934z1" target="_blank"><font color="#006699">Змінюється документом...</font></a> <font class="sml">[5]</font>
+</dd>
+<dd>
+<img src="http://zakonst.rada.gov.ua/images/link_z.gif" title="Зворотні зв'зки"><a href="/laws/main/l12934z6" target="_blank"><font color="#006699">Має відсилання з...</font></a> <font class="sml">[22498]</font>
+</dd>
+<dd>
+<img src="http://zakonst.rada.gov.ua/images/link_z.gif" title="Зворотні зв'зки"><a href="/laws/main/l12934z16" target="_blank"><font color="#006699">Тлумачиться...</font></a> <font class="sml">[67]</font>
+</dd>
+</dl>
+<a name="Public"></a><h2 class="hdr1">Публікації документа</h2>
+<dl class="num">
+<dt class="nam">
+<font color="#6600CC">Відомості Верховної Ради України</font> <span class="err"> офіційне видання </span>
+</dt>
+<dd>від <font color="#004499">23.07.1996</font>
+</dd>
+<dd>1996 р., № 30, стаття 141</dd>
+<dt class="nam">
+<font color="#6600CC">Офіційний вісник України</font> <span class="err"> офіційне видання </span>
+</dt>
+<dd>від <font color="#004499">01.10.2010</font>
+</dd>
+<dd>2010 р., / № 72/1 Спеціальний випуск /, стор. 15, стаття 2598</dd>
+</dl>
+<a name="Koms"></a><h2 class="hdr1">Комітети документа</h2>
+<dl class="num">
+<dt><h3 class="hdr2">Інформація Головного організаційного управління (щодо розподілу первинних актів за предметами відання комітетів ВР): станом на час завершення повноважень Верховної Ради України V скликання</h3></dt>
+<dt><ul>
+<li>Комітет з питань правової політики</li>
+</ul></dt>
+</dl>

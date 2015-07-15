@@ -4,6 +4,7 @@ namespace ShvetsGroup\Service;
 
 use JonnyW\PhantomJs\Client as PJClient;
 use ShvetsGroup\Service\Proxy\ProxyManager;
+use Symfony\Component\DomCrawler\Crawler;
 
 class Downloader
 {
@@ -29,15 +30,159 @@ class Downloader
     private $proxyManager;
 
     /**
-     * @param string   $downloadsDir
-     * @param Identity $identity
-     * @param ProxyManager    $proxyManager
+     * @param string       $downloadsDir
+     * @param Identity     $identity
+     * @param ProxyManager $proxyManager
      */
     public function __construct($downloadsDir, $identity, $proxyManager)
     {
         $this->downloadsDir = BASE_PATH . $downloadsDir;
         $this->identity = $identity;
         $this->proxyManager = $proxyManager;
+    }
+
+    /**
+     * @param string $url List url to download
+     * @param array  $options
+     *
+     * @return array[
+     *   'html' => string,
+     *   'page_count' => integer,
+     *   'laws' => array[
+     *     ['id' => string, 'date' => string],
+     *     ...
+     *   ]
+     * ]
+     */
+    public function downloadList($url, $options = [])
+    {
+        $data = [];
+        $data['html'] = download($url, $options);
+        $data['laws'] = [];
+        $page = crawler($data['html']);
+        $last_pager_link = $page->filterXPath('//*[@id="page"]/div[2]/table/tbody/tr[1]/td[3]/div/div[2]/span/a[last()]');
+        $data['page_count'] = $last_pager_link->count() ? preg_replace('/(.*?)([0-9]+)$/', '$2', $last_pager_link->attr('href')) : 1;
+
+        $page->filterXPath('//*[@id="page"]/div[2]/table/tbody/tr[1]/td[3]/div/dl/dd/ol/li')->each(
+            function (\Symfony\Component\DomCrawler\Crawler $node) use (&$data) {
+                $url = $node->filterXPath('//a')->attr('href');
+                $id = preg_replace('|/laws/show/|', '', urldecode(shortURL($url)));
+
+                $raw_date = $node->filterXPath('//font[@color="#004499"]')->text();
+                $raw_date = preg_replace('|([0-9]{2}\.[0-9]{2}\.[0-9]{4}).*|', '$1', $raw_date);
+                if (!preg_match('|[0-9]{2}\.[0-9]{2}\.[0-9]{4}|', $raw_date)) {
+                    throw new \Exception("Date has not been found in #{$id} at text: " . $node->text());
+                }
+                $date = date_format(date_create_from_format('d.m.Y', $raw_date), 'Y-m-d');
+
+                $data['laws'][$id] = [
+                    'id'   => $id,
+                    'date' => $date
+                ];
+            }
+        );
+
+        return $data;
+    }
+
+    /**
+     * @param string $law_id Id of the law.
+     * @param array  $options
+     *
+     * @return array[
+     *   'html' => string,
+     *   'meta' => array,
+     *   'has_text' => bool,
+     *   'revisions' => array[
+     *     ['law_id' => string, 'date' => string, 'comment' => string, 'no_text' => null|bool, 'needs_update' => null|bool],
+     *     ...
+     *   ],
+     *   'active_revision' => string,
+     *   'changes_laws' => null|array[
+     *     ['id' => string, 'date' => string],
+     *     ...
+     *   ]
+     * ]
+     *
+     * @throws \Exception
+     */
+    public function downloadCard($law_id, $options = [])
+    {
+        $data = [];
+        $url = '/laws/card/' . $law_id;
+        if (!isset($options['save_as'])) {
+            $options['save_as'] = '/laws/show/' . $law_id . '/card';
+        }
+        $crawler = crawler(download($url, $options))->filter('.txt');
+        $data['html'] = $crawler->html();
+        $data['meta'] = [];
+        $last_field = null;
+        $crawler->filterXPath('//h2[text()="Картка документа"]/following-sibling::dl[1]')->children()->each(function (Crawler $node) use (&$data, &$last_field) {
+            if ($node->getNode(0)->tagName == 'dt') {
+                $last_field = rtrim($node->text(), ':');
+                $data['meta'][$last_field] = [];
+            } elseif ($node->getNode(0)->tagName == 'dd') {
+                $data['meta'][$last_field][] = $node->text();
+            }
+        });
+
+        $data['has_text'] = (strpos($data['html'], 'Текст відсутній') === false && strpos($data['html'], 'Текст документа') !== false);
+
+        $data['revisions'] = [];
+        $last_revision = null;
+        $data['active_revision'] = null;
+        $crawler->filterXPath('//h2[contains(text(), "Історія документа")]/following-sibling::dl[1]')->children()->each(function (Crawler $node) use (&$data, &$last_revision, $law_id) {
+            if ($node->getNode(0)->tagName == 'dt') {
+                $raw_date = $node->filterXPath('//span[@style="color: #004499"]')->text();
+                $raw_date = preg_replace('|([0-9]{2}\.[0-9]{2}\.[0-9]{4}).*|', '$1', $raw_date);
+                if (!preg_match('|[0-9]{2}\.[0-9]{2}\.[0-9]{4}|', $raw_date)) {
+                    throw new \Exception("Revision date '{$raw_date}' is not valid in card of '{$law_id}'");
+                }
+                $date = date_format(date_create_from_format('d.m.Y', $raw_date), 'Y-m-d');
+                $last_revision = count($data['revisions']);
+
+                $data['revisions'][] = [
+                    'law_id'  => $law_id,
+                    'date'    => $date,
+                    'comment' => []
+                ];
+                if (!$node->filter('a')->count()) {
+                    $data['revisions'][$last_revision]['no_text'] = true;
+                }
+
+                if (str_contains($node->text(), 'поточна редакція')) {
+                    $data['active_revision'] = $data['revisions'][$last_revision]['date'];
+                }
+            } elseif ($node->getNode(0)->tagName == 'dd') {
+                $data['revisions'][$last_revision]['comment'][] = str_replace('<a name="Current"></a>', '', $node->html());
+            }
+        });
+        foreach ($data['revisions'] as $date => &$revision) {
+            $revision['comment'] = implode("\n", $revision['comment']);
+        }
+
+        if (!$data['active_revision'] && $data['has_text']) {
+            if (!$data['revisions']) {
+                throw new \Exception("Card has text, but no revisions in '{$law_id}'");
+            }
+            $data['revisions'][0]['needs_update'] = true;
+            $data['active_revision'] = $data['revisions'][0]['date'];
+        }
+
+        if (isset($options['check_related']) && $options['check_related']) {
+            $changes_link =
+                $crawler->filterXPath('//h2[contains(text(), "Пов\'язані документи")]/following-sibling::dl[1]/*/a/font[text()="Змінює документ..."]/..');
+            if ($changes_link->count()) {
+                $list = downloadList($changes_link->attr('href'));
+                $data['changes_laws'] = $list['laws'];
+                for ($i = 2; $i <= $list['page_count']; $i++) {
+                    $list = downloadList($changes_link->attr('href') . '/page' . $i);
+                    $data['changes_laws'] += $list['laws'];
+                }
+            }
+        }
+
+        return $data;
     }
 
     /**
@@ -78,6 +223,7 @@ class Downloader
             _log($output);
 
             $this->proxyManager->releaseProxy();
+
             return $html;
         }
 
@@ -141,7 +287,7 @@ class Downloader
                         }
                         $attempt++;
                         continue 2;
-                    break;
+                        break;
                     case 404:
                         $output .= ('-S' . $result['status'] . ' ');
                         _log($output, 'red');

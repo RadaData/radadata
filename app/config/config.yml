@@ -1,6 +1,7 @@
 parameters:
     downloads_dir: '../downloads'
     use_proxy: 0
+    max_crawl_date: 2015-07-01
     db:
       database: radadata
       username: root

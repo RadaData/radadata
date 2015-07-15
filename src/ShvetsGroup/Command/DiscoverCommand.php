@@ -2,7 +2,7 @@
 
 namespace ShvetsGroup\Command;
 
-use ShvetsGroup\Model\Law;
+use ShvetsGroup\Model\Laws\Law;
 use Symfony\Component\Config\Definition\Exception\Exception;
 use Symfony\Component\Console as Console;
 
@@ -58,6 +58,9 @@ class DiscoverCommand extends Console\Command\Command
 
         if ($this->meta->isEmpty() || $this->reset_meta) {
             $this->meta->parse($this->re_download);
+            if ($this->reset_meta) {
+                die();
+            }
         }
 
         $this->discoverNewLaws($this->reset);
@@ -104,7 +107,7 @@ class DiscoverCommand extends Console\Command\Command
             ], 'discover');
         }
 
-        while ($date < strtotime('midnight')) {
+        while ($date <= strtotime('midnight') && $date < strtotime(max_date())) {
             $this->jobsManager->add('discover_command', 'discoverDailyLawList', [
                 'law_list_url' => '/laws/main/a' . date('Ymd', $date) . '/sp5/page',
                 'date' => date('Y-m-d', $date),
@@ -112,12 +115,6 @@ class DiscoverCommand extends Console\Command\Command
             ], 'discover');
             $date = strtotime(date('c', $date) . '+1 day');
         }
-
-        $this->jobsManager->add('discover_command', 'discoverDailyLawList', [
-            'law_list_url' => '/laws/main/a' . date('Ymd') . '/sp5/page',
-            'date' => date('Y-m-d'),
-            're_download' => $re_download
-        ], 'discover');
     }
 
     /**
@@ -130,13 +127,11 @@ class DiscoverCommand extends Console\Command\Command
     public function discoverDailyLawList($law_list_url, $date, $re_download = false)
     {
         try {
-            $first_page = crawler(download($law_list_url, [
+            $data = downloadList($law_list_url, [
                 're_download' => $re_download || $this->re_download,
                 'save' => $date != date('Y-m-d')
-            ]));
-            $last_pager_link = $first_page->filterXPath('//*[@id="page"]/div[2]/table/tbody/tr[1]/td[3]/div/div[2]/span/a[last()]');
-            $page_count = $last_pager_link->count() ? preg_replace('/(.*?)([0-9]+)$/', '$2', $last_pager_link->attr('href')) : 1;
-            for ($i = 1; $i <= $page_count; $i++) {
+            ]);
+            for ($i = 1; $i <= $data['page_count']; $i++) {
                 $this->jobsManager->add('discover_command', 'discoverDailyLawListPage', [
                     'law_list_url' => $law_list_url . ($i > 1 ? $i : ''),
                     'date' => $date,
@@ -160,28 +155,14 @@ class DiscoverCommand extends Console\Command\Command
     public function discoverDailyLawListPage($law_list_url, $page_num, $date, $re_download = false)
     {
         try {
-            $list_page = crawler(download($law_list_url, [
+            $data = downloadList($law_list_url, [
                 're_download' => $page_num > 1 ? ($re_download || $this->re_download) : false,
                 'save' => $date != date('Y-m-d')
-            ]));
-            $list_page->filterXPath('//*[@id="page"]/div[2]/table/tbody/tr[1]/td[3]/div/dl/dd/ol/li')
-                ->each(
-                    function (\Symfony\Component\DomCrawler\Crawler $node) {
-                        $url = $node->filterXPath('//a')->attr('href');
-                        $id = preg_replace('|/laws/show/|', '', urldecode(shortURL($url)));
-
-                        $raw_date = $node->filterXPath('//font[@color="#004499"]')->text();
-                        $raw_date = preg_replace('|([0-9]{2}\.[0-9]{2}\.[0-9]{4}).*|', '$1', $raw_date);
-                        if (!preg_match('|[0-9]{2}\.[0-9]{2}\.[0-9]{4}|', $raw_date)) {
-                            throw new \Exception("Date has not been found in #{$id} at text: " . $node->text());
-                        }
-                        $date = date_format(date_create_from_format('d.m.Y', $raw_date), 'Y-m-d');
-
-                        Law::firstOrCreate(['id' => $id])->update(['date' => $date]);
-                        $this->jobsManager->add('download_command', 'downloadLaw', ['id' => $id], 'download');
-                    }
-                );
-
+            ]);
+            foreach ($data['laws'] as $id => $law) {
+                Law::firstOrCreate(['id' => $id])->update(['date' => $law['date']]);
+                $this->jobsManager->add('download_command', 'downloadLaw', ['id' => $id], 'download');
+            }
         } catch (Exception $e) {
             _log($e->getMessage(), 'red');
         }

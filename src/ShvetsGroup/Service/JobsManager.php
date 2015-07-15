@@ -27,7 +27,7 @@ class JobsManager extends ContainerAware
     public function __construct($proxyManager)
     {
         $this->proxyManager = $proxyManager;
-        pcntl_signal(SIGCHLD, [$this, "childSignalHandler"]);
+        \pcntl_signal(SIGCHLD, [$this, "childSignalHandler"]);
     }
 
     /**

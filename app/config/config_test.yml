@@ -1,0 +1,18 @@
+parameters:
+    downloads_dir: 'tests/fixtures/downloads'
+    use_proxy: 0
+    max_crawl_date: 2015-07-01
+    db:
+      database: radadata_test
+      username: root
+      password: root
+      host: localhost
+      port: 3306
+      driver: mysql
+      prefix:
+      charset: utf8
+      collation: utf8_unicode_ci
+
+
+imports:
+  - { resource: config.yml }

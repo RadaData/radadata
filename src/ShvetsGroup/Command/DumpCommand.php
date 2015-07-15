@@ -3,7 +3,7 @@
 namespace ShvetsGroup\Command;
 
 use Illuminate\Database\Capsule\Manager as DB;
-use ShvetsGroup\Model\Law;
+use ShvetsGroup\Model\Laws\Law;
 use Symfony\Component\Console as Console;
 
 class DumpCommand extends Console\Command\Command

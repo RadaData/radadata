@@ -6,7 +6,7 @@ use Symfony\Component\Console as Console;
 
 use ShvetsGroup\Service\JobsManager;
 use ShvetsGroup\Service\Proxy\ProxyManager;
-use ShvetsGroup\Model\Law;
+use ShvetsGroup\Model\Laws\Law;
 use ShvetsGroup\Model\Job;
 use Illuminate\Database\Capsule\Manager as DB;
 

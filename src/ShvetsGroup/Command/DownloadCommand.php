@@ -2,8 +2,10 @@
 
 namespace ShvetsGroup\Command;
 
-use ShvetsGroup\Model\Law;
+use ShvetsGroup\Model\Laws;
+use ShvetsGroup\Model\Laws\Law;
 use Symfony\Component\Console as Console;
+use Illuminate\Database\Capsule\Manager as DB;
 
 class DownloadCommand extends Console\Command\Command
 {
@@ -60,20 +62,20 @@ class DownloadCommand extends Console\Command\Command
     {
         $this->jobsManager->deleteAll('download');
 
-        Law::where('status', '<', Law::DOWNLOADED_CARD)->chunk(200, function($laws) {
+        Law::where('status', '<', Law::DOWNLOADED_CARD)->where('date', '<', max_date())->chunk(200, function ($laws) {
             foreach ($laws as $law) {
                 $this->jobsManager->add('download_command', 'downloadCard', [
-                    'id' => $law->id,
+                    'id'          => $law->id,
                     're_download' => $law->status == Law::DOWNLOADED_BUT_NEEDS_UPDATE
                 ], 'download');
             }
         });
-        //Law::where('status', Law::DOWNLOADED_CARD)->chunk(200, function($laws) {
+        //Law::where('status', Law::DOWNLOADED_CARD)->where('date', '<', max_date())->chunk(200, function($laws) {
         //    foreach ($laws as $law) {
         //        $this->jobsManager->add('download_command', 'downloadRevisions', ['id' => $law->id], 'download');
         //    }
         //});
-        //Law::where('status', Law::DOWNLOADED_REVISIONS)->chunk(200, function($laws) {
+        //Law::where('status', Law::DOWNLOADED_REVISIONS)->where('date', '<', max_date())->chunk(200, function($laws) {
         //    foreach ($laws as $law) {
         //        $this->jobsManager->add('download_command', 'downloadRelations', ['id' => $law->id], 'download');
         //    }
@@ -95,35 +97,65 @@ class DownloadCommand extends Console\Command\Command
     /**
      * Download a specific law's card page.
      *
-     * @param string $id Law ID.
-     * @param bool $re_download Whether or not to re-download card page.
+     * @param string $id          Law ID.
+     * @param bool   $re_download Whether or not to re-download card page.
+     *
+     * @return Law
      */
     function downloadCard($id, $re_download = false)
     {
-        try {
-            $law = Law::find($id);
+        /**
+         * @var $law Law
+         */
+        $law = Law::find($id);
 
-            $html = download('/laws/card/' . $id, ['re_download' => $re_download || $this->re_download, 'save_as' => '/laws/show/' . $id . '/card']);
+        $card = downloadCard($id, [
+            're_download'   => $re_download || $this->re_download,
+            'check_related' => $law->status == Law::NOT_DOWNLOADED
+        ]);
 
-            // TODO: parse card data
+        DB::transaction(function () use ($law, $card) {
+            $law->card = $card['html'];
 
-            // 1. Set card meta
-            // 2. Extract all revisions history and all of them to revisions table with not downloaded status
-            // 3. If this is a new law (law status NOT_DOWNLOADED) AND if there are changing relations,
-            // - download relations page and
-            // - for each law:
-            //   - mark as needs update
-            //   - add downloadCard job for each of them with re_download parameter
+            $law->issuers()->sync($card['meta'][Laws\Issuer::field_name]);
+            $law->types()->sync($card['meta'][Laws\Type::field_name]);
+            $law->state()->sync($card['meta'][Laws\State::field_name]);
 
-            $law->update(['status' => Law::DOWNLOADED_CARD]);
+            $law->has_text = $card['has_text'] ? $law->has_text = Law::HAS_TEXT : $law->has_text = Law::NO_TEXT;
 
-            if (strpos($html, 'Текст відсутній') !== false || strpos($html, 'Текст документа') === false) {
-                $law->update(['has_text' => Law::NO_TEXT]);
+            foreach ($card['revisions'] as $date => &$revision) {
+                $data = [
+                    'law_id'  => $revision['law_id'],
+                    'date'    => $revision['date'],
+                    'comment' => $revision['comment']
+                ];
+                // We should be careful with statuses, since we don't want to re-download already downloaded revisions.
+                if (isset($revision['no_text']) && $revision['no_text']) {
+                    $data['status'] = Laws\Revision::NO_TEXT;
+                }
+                if (isset($revision['needs_update']) && $revision['needs_update']) {
+                    $data['status'] = Laws\Revision::NEEDS_UPDATE;
+                }
+                Laws\Revision::updateOrCreate($data);
+            }
+            $law->active_revision = $card['active_revision'];
+
+            if (isset($card['changes_laws']) && $card['changes_laws']) {
+                Law::where('id', array_column($card['changes_laws'], 'id'))->update(['status' => Law::DOWNLOADED_BUT_NEEDS_UPDATE]);
+                foreach ($card['changes_laws'] as $l) {
+                    $this->jobsManager->add('download_command', 'downloadCard', [
+                        'id'          => $l['id'],
+                        're_download' => true
+                    ], 'download');
+                }
             }
 
-        } catch (\Exception $e) {
-            _log($e->getMessage(), 'red');
-        }
+            $law->status = Law::DOWNLOADED_CARD;
+
+            $law->save();
+        });
+
+        return $law;
     }
 
     /**
@@ -137,6 +169,7 @@ class DownloadCommand extends Console\Command\Command
 
         if (!$law->has_text) {
             $law->update(['status' => Law::DOWNLOADED_REVISIONS]);
+
             return;
         }
 
