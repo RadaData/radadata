@@ -26,6 +26,8 @@ else {
 
 $container->get('database');
 
+define('DOWNLOADS_PATH', BASE_PATH . $container->getParameter('downloads_dir') . "/");
+
 $application = new Console\Application('RadaDownloader', '1.0.0');
 $application->add($container->get('status_command'));
 $application->add($container->get('discover_command'));

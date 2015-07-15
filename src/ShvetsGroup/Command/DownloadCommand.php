@@ -70,28 +70,14 @@ class DownloadCommand extends Console\Command\Command
                 ], 'download');
             }
         });
-        //Law::where('status', Law::DOWNLOADED_CARD)->where('date', '<', max_date())->chunk(200, function($laws) {
-        //    foreach ($laws as $law) {
-        //        $this->jobsManager->add('download_command', 'downloadRevisions', ['id' => $law->id], 'download');
-        //    }
-        //});
-        //Law::where('status', Law::DOWNLOADED_REVISIONS)->where('date', '<', max_date())->chunk(200, function($laws) {
-        //    foreach ($laws as $law) {
-        //        $this->jobsManager->add('download_command', 'downloadRelations', ['id' => $law->id], 'download');
-        //    }
-        //});
-    }
-
-    /**
-     * Download all law pages (card, revisions, relations).
-     *
-     * @param string $id Law ID.
-     */
-    function downloadLaw($id)
-    {
-        $this->jobsManager->add('download_command', 'downloadCard', ['id' => $id], 'download');
-        //$this->jobsManager->add('download_command', 'downloadRevisions', ['id' => $id], 'download');
-        //$this->jobsManager->add('download_command', 'downloadRelations', ['id' => $id], 'download');
+        Laws\Revision::where('status', Laws\Revision::NEEDS_UPDATE)->chunk(200, function ($revisions) {
+            foreach ($revisions as $revision) {
+                $this->jobsManager->add('download_command', 'downloadRevision', [
+                    'law_id' => $revision->law_id,
+                    'date'   => $revision->date,
+                ], 'download');
+            }
+        });
     }
 
     /**
@@ -140,6 +126,13 @@ class DownloadCommand extends Console\Command\Command
             }
             $law->active_revision = $card['active_revision'];
 
+            foreach ($law->revisions()->where('status', Laws\Revision::NEEDS_UPDATE)->get() as $revision) {
+                $this->jobsManager->add('download_command', 'downloadRevision', [
+                    'law_id' => $revision->law_id,
+                    'date'   => $revision->date,
+                ], 'download');
+            }
+
             if (isset($card['changes_laws']) && $card['changes_laws']) {
                 Law::where('id', array_column($card['changes_laws'], 'id'))->update(['status' => Law::DOWNLOADED_BUT_NEEDS_UPDATE]);
                 foreach ($card['changes_laws'] as $l) {
@@ -161,18 +154,31 @@ class DownloadCommand extends Console\Command\Command
     /**
      * Download a specific law's revision pages.
      *
-     * @param string $id Law ID.
+     * @param $law_id
+     * @param $date
      */
-    function downloadRevisions($id)
+    function downloadRevision($law_id, $date)
     {
-        $law = Law::find($id);
+        $law = Law::find($law_id);
+        $revision = $law->getRevision($date);
 
-        if (!$law->has_text) {
-            $law->update(['status' => Law::DOWNLOADED_REVISIONS]);
 
-            return;
-        }
+        DB::transaction(function () use ($law, $revision) {
+            $text = '';
 
-        // TODO: the actual parsing
+            // TODO: the actual parsing
+
+            $text = downloadRevision($revision);
+
+            $revision->update([
+                'text'   => $text,
+                'status' => Laws\Revision::UP_TO_DATE
+            ]);
+            if ($revision == $law->active_revision) {
+                $law->update([
+                    'text' => $text,
+                ]);
+            }
+        });
     }
 }

@@ -180,7 +180,7 @@ class JobsManager extends ContainerAware
      */
     public function add($service, $method, $parameters, $group)
     {
-        Job::create(['service' => $service, 'method' => $method, 'parameters' => $parameters, 'group' => $group]);
+        Job::updateOrCreate(['service' => $service, 'method' => $method, 'parameters' => $parameters, 'group' => $group]);
     }
 
     /**

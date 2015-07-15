@@ -23,6 +23,7 @@ class CheckCommand extends Console\Command\Command
 
         $this->setDescription('Check the downloaded files for issues.');
         $this->addOption('fix', 'f', Console\Input\InputOption::VALUE_NONE, 'Try to fix all problems.');
+        $this->addOption('old_files', 'o', Console\Input\InputOption::VALUE_NONE, 'Move old downloads to new locations.');
 
         $this->downloadsDir = BASE_PATH . $downloadsDir;
         $this->jobsManager = $jobsManager;
@@ -40,6 +41,11 @@ class CheckCommand extends Console\Command\Command
     protected function execute(Console\Input\InputInterface $input, Console\Output\OutputInterface $output)
     {
         $fix = $input->getOption('fix');
+        $old = $input->getOption('old_files');
+
+        if ($old) {
+            return $this->move_files();
+        }
 
         $downloaded_card = Law::where('status', Law::DOWNLOADED_CARD)->count();
         $downloaded_text = Law::where('status', Law::DOWNLOADED_REVISIONS)->count();
@@ -168,5 +174,56 @@ class CheckCommand extends Console\Command\Command
         print("\n");
 
         return true;
+    }
+
+    function move_files()
+    {
+
+        function rrmdir($dir) {
+            if (is_dir($dir)) {
+                $objects = scandir($dir);
+                foreach ($objects as $object) {
+                    if ($object != "." && $object != "..") {
+                        if (filetype($dir."/".$object) == "dir") rrmdir($dir."/".$object); else unlink($dir."/".$object);
+                    }
+                }
+                reset($objects);
+                rmdir($dir);
+            }
+        }
+
+        function is_dir_empty($dir) {
+            if (!is_readable($dir)) return NULL;
+            return (count(scandir($dir)) == 2);
+        }
+
+        $base_laws = DOWNLOADS_PATH . 'zakon.rada.gov.ua/laws/';
+        $files = glob($base_laws . 'show/*/card.html');
+        $files += glob($base_laws . 'show/*/*/card.html');
+
+        foreach ($files as $file) {
+            $law_id = preg_replace('|' . $base_laws . 'show/(.*?)/card.html|', '$1', $file);
+            $new_name = $base_laws . 'card/' . $law_id . '.html';
+
+            if (file_exists($new_name)) {
+                unlink($file);
+            }
+            else {
+                $new_dir = dirname($new_name);
+                if (!is_dir($new_dir)) {
+                    mkdir($new_dir, 0777, true);
+                }
+                rename($file, $new_name);
+            }
+
+            if (is_dir_empty($base_laws . 'show/' . $law_id)) {
+                rrmdir($base_laws . 'show/' . $law_id);
+
+                $parent = dirname($base_laws . 'show/' . $law_id);
+                if (is_dir_empty($parent)) {
+                    rrmdir($parent);
+                }
+            }
+        }
     }
 }

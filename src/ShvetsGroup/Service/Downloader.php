@@ -3,6 +3,7 @@
 namespace ShvetsGroup\Service;
 
 use JonnyW\PhantomJs\Client as PJClient;
+use ShvetsGroup\Model\Laws\Revision;
 use ShvetsGroup\Service\Proxy\ProxyManager;
 use Symfony\Component\DomCrawler\Crawler;
 
@@ -94,7 +95,8 @@ class Downloader
      *   'meta' => array,
      *   'has_text' => bool,
      *   'revisions' => array[
-     *     ['law_id' => string, 'date' => string, 'comment' => string, 'no_text' => null|bool, 'needs_update' => null|bool],
+     *     ['law_id' => string, 'date' => string, 'comment' => string, 'no_text' => null|bool, 'needs_update' =>
+     *     null|bool],
      *     ...
      *   ],
      *   'active_revision' => string,
@@ -183,6 +185,15 @@ class Downloader
         }
 
         return $data;
+    }
+
+    /**
+     * @param Revision $revision
+     * @param array    $options
+     */
+    public function downloadRevision($revision, $options = [])
+    {
+        // 1. Check if
     }
 
     /**

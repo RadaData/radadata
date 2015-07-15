@@ -115,9 +115,14 @@ function downloadList($url, $options = [])
 	return downloader()->downloadList($url, $options);
 }
 
-function downloadCard($url, $options = [])
+function downloadCard($law_id, $options = [])
 {
-	return downloader()->downloadCard($url, $options);
+	return downloader()->downloadCard($law_id, $options);
+}
+
+function downloadRevision($revision, $options = [])
+{
+	return downloader()->downloadRevision($revision, $options);
 }
 
 function shortURL($url)
