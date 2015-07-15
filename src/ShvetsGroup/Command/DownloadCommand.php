@@ -143,6 +143,8 @@ class DownloadCommand extends Console\Command\Command
                 }
             }
 
+            $law->card_updated = $card['timestamp'];
+
             $law->status = Law::DOWNLOADED_CARD;
 
             $law->save();
@@ -162,23 +164,16 @@ class DownloadCommand extends Console\Command\Command
         $law = Law::find($law_id);
         $revision = $law->getRevision($date);
 
-
         DB::transaction(function () use ($law, $revision) {
-            $text = '';
-
             // TODO: the actual parsing
 
-            $text = downloadRevision($revision);
+            $data = downloadRevision($revision);
 
             $revision->update([
-                'text'   => $text,
-                'status' => Laws\Revision::UP_TO_DATE
+                'text'         => $data['html'],
+                'text_updated' => $data['timestamp'],
+                'status'       => Laws\Revision::UP_TO_DATE
             ]);
-            if ($revision == $law->active_revision) {
-                $law->update([
-                    'text' => $text,
-                ]);
-            }
         });
     }
 }

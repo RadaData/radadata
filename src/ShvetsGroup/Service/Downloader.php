@@ -5,6 +5,7 @@ namespace ShvetsGroup\Service;
 use JonnyW\PhantomJs\Client as PJClient;
 use ShvetsGroup\Model\Laws\Revision;
 use ShvetsGroup\Service\Proxy\ProxyManager;
+use Symfony\Component\Config\Definition\Exception\Exception;
 use Symfony\Component\DomCrawler\Crawler;
 
 class Downloader
@@ -57,8 +58,7 @@ class Downloader
      */
     public function downloadList($url, $options = [])
     {
-        $data = [];
-        $data['html'] = download($url, $options);
+        $data = download($url, $options);
         $data['laws'] = [];
         $page = crawler($data['html']);
         $last_pager_link = $page->filterXPath('//*[@id="page"]/div[2]/table/tbody/tr[1]/td[3]/div/div[2]/span/a[last()]');
@@ -110,12 +110,12 @@ class Downloader
      */
     public function downloadCard($law_id, $options = [])
     {
-        $data = [];
         $url = '/laws/card/' . $law_id;
         if (!isset($options['save_as'])) {
             $options['save_as'] = '/laws/show/' . $law_id . '/card';
         }
-        $crawler = crawler(download($url, $options))->filter('.txt');
+        $data = download($url, $options);
+        $crawler = crawler($data['html'])->filter('.txt');
         $data['html'] = $crawler->html();
         $data['meta'] = [];
         $last_field = null;
@@ -194,6 +194,16 @@ class Downloader
     public function downloadRevision($revision, $options = [])
     {
         // 1. Check if
+
+        throw new Exception('Not implemented.');
+
+        $html = '';
+        $data = [];
+
+        return [
+            'html' => $html,
+            'timestamp' => $data['timestamp']
+        ];
     }
 
     /**
@@ -229,13 +239,17 @@ class Downloader
         $style = 'default';
 
         if ($this->isDownloaded($save_as ?: $url) && !$options['re_download']) {
-            $html = file_get_contents($this->URL2path($save_as ?: $url));
+            $file_path = $this->URL2path($save_as ?: $url);
+            $html = file_get_contents($file_path);
             $output .= ('* ');
             _log($output);
 
             $this->proxyManager->releaseProxy();
 
-            return $html;
+            return [
+                'html' => $html,
+                'timestamp' => filemtime($file_path)
+            ];
         }
 
         $attempt = 0;
@@ -288,7 +302,10 @@ class Downloader
 
                         $this->proxyManager->releaseProxy();
 
-                        return $result['html'];
+                        return [
+                            'html' => $result['html'],
+                            'timestamp' => time()
+                        ];
                     case 403:
                         $output .= ('-S' . $result['status'] . ' ');
                         _log($output, 'red');

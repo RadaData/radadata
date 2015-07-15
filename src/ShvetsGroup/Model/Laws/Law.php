@@ -19,7 +19,7 @@ class Law extends Model
 
 
     public $timestamps = false;
-    public $fillable = ['id', 'date', 'status', 'has_text', 'card', 'text', 'active_revision', 'issuers', 'types', 'state'];
+    public $fillable = ['id', 'date', 'status', 'has_text', 'card', 'card_updated', 'text', 'active_revision', 'issuers', 'types', 'state'];
 
     public function issuers()
     {

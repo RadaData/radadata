@@ -44,6 +44,7 @@ class DownloadCommandTest extends BaseTest
             'date' => '2014-05-15',
             'law_id' => '254к/96-вр',
             'text' => '',
+            'text_updated' => null,
             'comment' => '<u>Тлумачення</u>, підстава - <a href="/laws/show/v005p710-14" target="_blank">v005p710-14</a>',
             'status' => \ShvetsGroup\Model\Laws\Revision::NEEDS_UPDATE,
         ]);
@@ -56,6 +57,7 @@ class DownloadCommandTest extends BaseTest
             'date' => '2011-02-01',
             'law_id' => '2952-17',
             'text' => '',
+            'text_updated' => null,
             'comment' => '<u>Прийняття</u>',
             'status' => \ShvetsGroup\Model\Laws\Revision::NEEDS_UPDATE,
         ]);

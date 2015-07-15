@@ -101,8 +101,8 @@ class Meta
      */
     public function parse($re_download)
     {
-        $html = download('/laws/stru/a', ['re_download' => $re_download]);
-        $list = crawler($html);
+        $data = download('/laws/stru/a', ['re_download' => $re_download]);
+        $list = crawler($data['html']);
 
         // The loop here is to parse both domestic and international issuers.
         $issuers = [];
