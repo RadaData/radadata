@@ -11,7 +11,11 @@ class Revision extends Model
     const NO_TEXT = 5;
 
     protected $table = 'law_revisions';
-    protected $primaryKey = 'date';
     public $timestamps = false;
-    public $fillable = ['date', 'law_id', 'state', 'text', 'text_updated', 'comment', 'status'];
+    public $fillable = ['id', 'date', 'law_id', 'state', 'text', 'text_updated', 'comment', 'status'];
+
+    public static function find($law_id, $date)
+    {
+        return static::where('law_id', $law_id)->where('date', $date)->first();
+    }
 }
