@@ -4,6 +4,7 @@ namespace ShvetsGroup\Command;
 
 use ShvetsGroup\Model\Laws\Law;
 use Symfony\Component\Console as Console;
+use Illuminate\Database\Capsule\Manager as DB;
 
 class CheckCommand extends Console\Command\Command
 {
@@ -178,7 +179,6 @@ class CheckCommand extends Console\Command\Command
 
     function move_files()
     {
-
         function rrmdir($dir) {
             if (is_dir($dir)) {
                 $objects = scandir($dir);
@@ -198,22 +198,98 @@ class CheckCommand extends Console\Command\Command
         }
 
         $base_laws = DOWNLOADS_PATH . 'zakon.rada.gov.ua/laws/';
-        $files = glob($base_laws . 'show/*/card.html');
-        $files += glob($base_laws . 'show/*/*/card.html');
+        $dirs = array_merge(glob($base_laws . 'show/*/*', GLOB_ONLYDIR | GLOB_MARK), glob($base_laws . 'show/*', GLOB_ONLYDIR | GLOB_MARK));
+
+        foreach ($dirs as $dir) {
+            if (glob($dir . '*', GLOB_ONLYDIR)) {
+                continue;
+            }
+            if (glob($dir . 'card.html')) {
+                continue;
+            }
+            rrmdir($dir);
+        }
+
+
+        $base_laws = DOWNLOADS_PATH . 'zakon.rada.gov.ua/laws/';
+        $files = array_merge(glob($base_laws . 'show/*/*/card.html'), glob($base_laws . 'show/*/card.html'));
 
         foreach ($files as $file) {
             $law_id = preg_replace('|' . $base_laws . 'show/(.*?)/card.html|', '$1', $file);
-            $new_name = $base_laws . 'card/' . $law_id . '.html';
+            $new_name_card = $base_laws . 'card/' . $law_id . '.html';
 
-            if (file_exists($new_name)) {
+            preg_match('|<span style="color: #.*?">(.*?)</span>(?:</b></a>\n<img src="http://zakonst.rada.gov.ua/images/docs.gif" title="Документ"> <span class="num" style="color:#999999">поточна редакція, .*?, <a href=".*">перейти »</a></span>)?</dt>\n<dd><a name="Current">|', file_get_contents($file), $matches);
+            $revision = isset($matches[1]) ? $matches[1] : null;
+            if ($revision) {
+                if (!preg_match('|[0-9]{2}\.[0-9]{2}\.[0-9]{4}|', $revision) || !date_create_from_format('d.m.Y', $revision)) {
+                    throw new \Exception("Revision has not been found in #{$file}.");
+                }
+                $date = date_format(date_create_from_format('d.m.Y', $revision), 'Ymd');
+                $new_name_text = $base_laws . 'show/' . $law_id . '/ed' . $date . '/page.html';
+
+                $old_files = [];
+                $text = '';
+                if (file_exists($base_laws . 'show/' . $law_id . '/text.html')) {
+                    $text_file_name = $base_laws . 'show/' . $law_id . '/text.html';
+                    $old_files[] = $text_file_name;
+
+                    $text = crawler(file_get_contents($text_file_name))->filter('.txt')->html();
+                }
+                elseif (file_exists($base_laws . 'show/' . $law_id . '/page.html')) {
+                    $text_file_name = $base_laws . 'show/' . $law_id . '/page.html';
+                    $old_files[] = $text_file_name;
+
+                    $page = crawler(file_get_contents($base_laws . 'show/' . $law_id . '/page.html'));
+                    $text = $page->filter('.txt')->html();
+                    $pager = $page->filterXPath('(//span[@class="nums"])[1]/br/preceding-sibling::a[1]');
+                    $page_count = $pager->count() ? $pager->text() : 1;
+
+                    for ($i = 2; $i <= $page_count; $i++) {
+                        $text_file_name = $base_laws . 'show/' . $law_id . '/page' . $i . '.html';
+
+                        if (!file_exists($text_file_name)) {
+                            $text = '';
+                            foreach ($old_files as $file_name) {
+                                unlink($file_name);
+                            }
+                            break;
+                        }
+
+                        $old_files[] = $text_file_name;
+                        $page = crawler(file_get_contents($text_file_name));
+                        $text .= $page->filter('.txt')->html();
+                    }
+                }
+
+                if (file_exists($new_name_text)) {
+                    foreach ($old_files as $file_name) {
+                        unlink($file_name);
+                    }
+                }
+                elseif ($text) {
+                    $new_dir = dirname($new_name_text);
+                    if (!is_dir($new_dir)) {
+                        mkdir($new_dir, 0777, true);
+                    }
+
+                    file_put_contents($new_name_text, '<html><body><div class="txt txt-old">' . $text . '</div></body></html>');
+                    touch($new_name_text, filemtime($old_files[0]));
+
+                    foreach ($old_files as $file_name) {
+                        unlink($file_name);
+                    }
+                }
+            }
+
+            if (file_exists($new_name_card)) {
                 unlink($file);
             }
             else {
-                $new_dir = dirname($new_name);
+                $new_dir = dirname($new_name_card);
                 if (!is_dir($new_dir)) {
                     mkdir($new_dir, 0777, true);
                 }
-                rename($file, $new_name);
+                rename($file, $new_name_card);
             }
 
             if (is_dir_empty($base_laws . 'show/' . $law_id)) {

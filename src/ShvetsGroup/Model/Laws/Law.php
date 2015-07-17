@@ -19,7 +19,7 @@ class Law extends Model
 
 
     public $timestamps = false;
-    public $fillable = ['id', 'date', 'status', 'has_text', 'card', 'card_updated', 'text', 'active_revision', 'issuers', 'types', 'state'];
+    public $fillable = ['id', 'date', 'status', 'state', 'has_text', 'card', 'card_updated', 'text', 'active_revision', 'issuers', 'types'];
 
     public function issuers()
     {
@@ -31,7 +31,7 @@ class Law extends Model
     }
     public function state()
     {
-        return $this->belongsToMany('\ShvetsGroup\Model\Laws\State', 'law_states', 'law_id', 'state_name');
+        return $this->hasOne('\ShvetsGroup\Model\Laws\State', 'name', 'state');
     }
     public function revisions()
     {
@@ -40,16 +40,6 @@ class Law extends Model
     public function active_revision()
     {
         return $this->hasOne('\ShvetsGroup\Model\Laws\Revision', 'date', 'active_revision');
-    }
-
-    /**
-     * @return string
-     */
-    public function getState()
-    {
-        if ($state = $this->state()->firstOrFail()) {
-            return $state->name;
-        }
     }
 
     /**

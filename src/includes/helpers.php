@@ -120,9 +120,9 @@ function downloadCard($law_id, $options = [])
 	return downloader()->downloadCard($law_id, $options);
 }
 
-function downloadRevision($revision, $options = [])
+function downloadRevision($law_id, $date, $options = [])
 {
-	return downloader()->downloadRevision($revision, $options);
+	return downloader()->downloadRevision($law_id, $date);
 }
 
 function shortURL($url)

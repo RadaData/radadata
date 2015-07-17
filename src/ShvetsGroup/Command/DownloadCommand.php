@@ -105,7 +105,7 @@ class DownloadCommand extends Console\Command\Command
 
             $law->issuers()->sync($card['meta'][Laws\Issuer::field_name]);
             $law->types()->sync($card['meta'][Laws\Type::field_name]);
-            $law->state()->sync($card['meta'][Laws\State::field_name]);
+            $law->state = reset($card['meta'][Laws\State::field_name]);
 
             $law->has_text = $card['has_text'] ? $law->has_text = Law::HAS_TEXT : $law->has_text = Law::NO_TEXT;
 
@@ -165,15 +165,15 @@ class DownloadCommand extends Console\Command\Command
         $revision = $law->getRevision($date);
 
         DB::transaction(function () use ($law, $revision) {
-            // TODO: the actual parsing
-
-            $data = downloadRevision($revision);
+            $data = downloadRevision($revision->law_id, $revision->date);
 
             $revision->update([
-                'text'         => $data['html'],
+                'text'         => $data['text'],
                 'text_updated' => $data['timestamp'],
                 'status'       => Laws\Revision::UP_TO_DATE
             ]);
         });
+
+        return $revision;
     }
 }

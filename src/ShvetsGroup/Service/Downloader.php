@@ -111,9 +111,6 @@ class Downloader
     public function downloadCard($law_id, $options = [])
     {
         $url = '/laws/card/' . $law_id;
-        if (!isset($options['save_as'])) {
-            $options['save_as'] = '/laws/show/' . $law_id . '/card';
-        }
         $data = download($url, $options);
         $crawler = crawler($data['html'])->filter('.txt');
         $data['html'] = $crawler->html();
@@ -156,6 +153,10 @@ class Downloader
                     $data['active_revision'] = $data['revisions'][$last_revision]['date'];
                 }
             } elseif ($node->getNode(0)->tagName == 'dd') {
+                if (strpos($node->html(), '<a name="Current"></a>') !== FALSE) {
+                    $data['active_revision'] = $data['revisions'][$last_revision]['date'];
+                    $data['revisions'][$last_revision]['needs_update'] = true;
+                }
                 $data['revisions'][$last_revision]['comment'][] = str_replace('<a name="Current"></a>', '', $node->html());
             }
         });
@@ -164,11 +165,7 @@ class Downloader
         }
 
         if (!$data['active_revision'] && $data['has_text']) {
-            if (!$data['revisions']) {
-                throw new \Exception("Card has text, but no revisions in '{$law_id}'");
-            }
-            $data['revisions'][0]['needs_update'] = true;
-            $data['active_revision'] = $data['revisions'][0]['date'];
+            throw new \Exception("Card has text, but no revisions in '{$law_id}'");
         }
 
         if (isset($options['check_related']) && $options['check_related']) {
@@ -188,22 +185,32 @@ class Downloader
     }
 
     /**
-     * @param Revision $revision
-     * @param array    $options
+     * @param       $law_id
+     * @param       $date
+     * @param array $options
+     *
+     * @return string
      */
-    public function downloadRevision($revision, $options = [])
+    public function downloadRevision($law_id, $date, $options = [])
     {
-        // 1. Check if
+        $url = '/laws/show/' . $law_id . '/ed' . date_format(date_create_from_format('Y-m-d', $date), 'Ymd') ;
+        $options['save_as'] = $url . '/page';
 
-        throw new Exception('Not implemented.');
+        $data = download($url, $options);
+        $crawler = crawler($data['html'])->filter('.txt');
+        $data['text'] = $crawler->html();
 
-        $html = '';
-        $data = [];
+        $pager = $crawler->filterXPath('(//span[@class="nums"])[1]/br/preceding-sibling::a[1]');
+        $page_count = $pager->count() ? $pager->text() : 1;
 
-        return [
-            'html' => $html,
-            'timestamp' => $data['timestamp']
-        ];
+        for ($i = 2; $i <= $page_count; $i++) {
+            $page_url = $url . '/page' . $i;
+            $options['save_as'] = $page_url;
+            $data = download($url, $options);
+            $data['text'] .= crawler($data['html'])->filter('.txt')->html();
+        }
+
+        return $data;
     }
 
     /**
@@ -230,7 +237,7 @@ class Downloader
             'save_as'       => null,
             'required_text' => [],
         ];
-        $options = array_merge($options, $default_options);
+        $options = array_merge($default_options, $options);
 
         $save_as = $options['save_as'] ? $this->fullURL($options['save_as']) : null;
 
