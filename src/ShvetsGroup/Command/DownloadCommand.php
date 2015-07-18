@@ -97,7 +97,7 @@ class DownloadCommand extends Console\Command\Command
 
         $card = downloadCard($id, [
             're_download'   => $re_download || $this->re_download,
-            'check_related' => $law->status == Law::NOT_DOWNLOADED
+            'check_related' => $law->status == Law::NOT_DOWNLOADED && !max_date()
         ]);
 
         DB::transaction(function () use ($law, $card) {
