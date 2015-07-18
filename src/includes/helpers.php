@@ -27,7 +27,7 @@ function _log($message, $style = 'default')
 {
 	date_default_timezone_set('Europe/Kiev');
 
-	$output = str_pad(getmypid(), 7, ':') . ' | ' . date('Y-m-d H:i:s') . ' :: ' . $message . "\n";
+	$output = str_pad(getmypid(), 7, ':&:') . ' | ' . date('Y-m-d H:i:s') . ' :: ' . $message . "\n";
 	if ($style == 'title') {
 		$output = "\n\n" . $output;
 	}
@@ -35,9 +35,11 @@ function _log($message, $style = 'default')
 	if (!is_dir(LOG_PATH)) {
 		mkdir(LOG_PATH);
 	}
-	$log_file = isset($args['log']) ? $args['log'] : LOG_PATH . 'log.txt';
-	file_put_contents($log_file, $output, FILE_APPEND);
 
+	if ($style == 'red') {
+		$log_file = isset($args['log']) ? $args['log'] : LOG_PATH . 'log.txt';
+		file_put_contents($log_file, $output, FILE_APPEND);
+	}
 
 	if ($style == 'red') {
 		//echo "\x07\x07\x07\x07\x07\x07\x07\x07\x07";

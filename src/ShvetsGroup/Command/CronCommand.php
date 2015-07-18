@@ -5,6 +5,8 @@ namespace ShvetsGroup\Command;
 use ShvetsGroup\Service\JobsManager;
 use ShvetsGroup\Service\Proxy\ProxyManager;
 use Symfony\Component\Console as Console;
+use ShvetsGroup\Model\Job;
+use Illuminate\Database\Capsule\Manager as DB;
 
 class CronCommand extends Console\Command\Command
 {

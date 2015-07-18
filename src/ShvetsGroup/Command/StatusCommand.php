@@ -52,6 +52,8 @@ class StatusCommand extends Console\Command\Command
     {
         DB::beginTransaction();
 
+        $errors = substr_count(file_get_contents(LOG_PATH . 'log.txt'), ':&:');
+
         $discovered_count = Law::count();
         $most_recent = Law::orderBy('date', 'desc')->take(1)->value('date');
         $most_recent_diff = floor((time() - (strtotime($most_recent)))/3600/24);
@@ -69,7 +71,7 @@ class StatusCommand extends Console\Command\Command
         $jobs_last_day = Job::where('finished', '>', time() - 3600 * 24)->count();
 
         if ($jobs_count) {
-            if ($jobs_last_hour) {
+            if ($jobs_last_10_minutes) {
                 $jobs_completion_time = round($jobs_count / ($jobs_last_10_minutes * 6));
                 if ($jobs_completion_time == 0) {
                     $jobs_completion_time = '(estimated finish time: less than hour)';
@@ -103,6 +105,8 @@ class StatusCommand extends Console\Command\Command
 
 
         $status = <<<STATUS
+=== Errors in log: {$errors}
+
 === Discovered laws: {$discovered_count}
     Most recent law: {$most_recent} ({$most_recent_age})
 
