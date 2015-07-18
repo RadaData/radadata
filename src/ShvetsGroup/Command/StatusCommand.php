@@ -97,7 +97,7 @@ class StatusCommand extends Console\Command\Command
 
         $jobs_discovery = Job::where('finished', 0)->where('group', 'discover')->count();
         $jobs_download_cards = Job::where('finished', 0)->where('method', 'downloadCard')->count();
-        $jobs_download_revisions = Job::where('finished', 0)->where('method', 'downloadRevisions')->count();
+        $jobs_download_revisions = Job::where('finished', 0)->where('method', 'downloadRevision')->count();
 
         DB::commit();
 
