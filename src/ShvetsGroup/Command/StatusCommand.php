@@ -7,6 +7,7 @@ use Symfony\Component\Console as Console;
 use ShvetsGroup\Service\JobsManager;
 use ShvetsGroup\Service\Proxy\ProxyManager;
 use ShvetsGroup\Model\Laws\Law;
+use ShvetsGroup\Model\Laws\Revision;
 use ShvetsGroup\Model\Job;
 use Illuminate\Database\Capsule\Manager as DB;
 
@@ -58,10 +59,9 @@ class StatusCommand extends Console\Command\Command
 
         $cards_downloaded = Law::where('status', Law::DOWNLOADED_CARD)->count();
         $cards_downloaded_p = round(($cards_downloaded / $discovered_count) * 100);
-        $revisions_downloaded = Law::where('status', Law::DOWNLOADED_REVISIONS)->count();
-        $revisions_downloaded_p = round(($revisions_downloaded / $discovered_count) * 100);
-        $relations_downloaded = Law::where('status', Law::DOWNLOADED_RELATIONS)->count();
-        $relations_downloaded_p = round(($relations_downloaded / $discovered_count) * 100);
+        $revisions_count = Revision::where('status', '<', Revision::NO_TEXT)->count();
+        $revisions_downloaded = Revision::where('status', Revision::UP_TO_DATE)->count();
+        $revisions_downloaded_p = round(($revisions_downloaded / $revisions_count) * 100);
 
         $jobs_count = Job::where('finished', 0)->count();
         $jobs_last_10_minutes = Job::where('finished', '>', time() - 600)->count();
@@ -98,7 +98,6 @@ class StatusCommand extends Console\Command\Command
         $jobs_discovery = Job::where('finished', 0)->where('group', 'discover')->count();
         $jobs_download_cards = Job::where('finished', 0)->where('method', 'downloadCard')->count();
         $jobs_download_revisions = Job::where('finished', 0)->where('method', 'downloadRevisions')->count();
-        $jobs_download_relations = Job::where('finished', 0)->where('method', 'downloadRelations')->count();
 
         DB::commit();
 
@@ -109,8 +108,7 @@ class StatusCommand extends Console\Command\Command
 
 === Downloaded:
          Cards: {$cards_downloaded} / {$discovered_count} ({$cards_downloaded_p}%)
-     Revisions: {$revisions_downloaded} / {$discovered_count} ({$revisions_downloaded_p}%)
-     Relations: {$relations_downloaded} / {$discovered_count} ({$relations_downloaded_p}%)
+     Revisions: {$revisions_downloaded} / {$revisions_count} ({$revisions_downloaded_p}%)
 
 === Jobs: {$currently_running}
     Todo: {$jobs_count} {$jobs_completion_time}
@@ -118,7 +116,6 @@ class StatusCommand extends Console\Command\Command
     Discovery jobs: {$jobs_discovery}
     Download cards: {$jobs_download_cards}
     Download revisions: {$jobs_download_revisions}
-    Download relations: {$jobs_download_relations}
 
     Done last 10 minutes: {$jobs_last_10_minutes}
     Done last hour: {$jobs_last_hour}
