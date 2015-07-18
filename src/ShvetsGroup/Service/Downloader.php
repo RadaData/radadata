@@ -241,8 +241,7 @@ class Downloader
 
         $save_as = $options['save_as'] ? $this->fullURL($options['save_as']) : null;
 
-        $output = '';
-        $output .= ($this->proxyManager->getProxyAddress() . '/' . $this->proxyManager->getProxyIp() . ' → ' . $this->shortURL($url) . ': ');
+        $output = $this->shortURL($url) . ': ';
         $style = 'default';
 
         if ($this->isDownloaded($save_as ?: $url) && !$options['re_download']) {
@@ -251,13 +250,13 @@ class Downloader
             $output .= ('* ');
             _log($output);
 
-            $this->proxyManager->releaseProxy();
-
             return [
                 'html' => $html,
                 'timestamp' => filemtime($file_path)
             ];
         }
+
+        $output = ($this->proxyManager->getProxyAddress() . '/' . $this->proxyManager->getProxyIp() . ' → ' . $output);
 
         $attempt = 0;
         while ($attempt < Downloader::FAILURE) {
