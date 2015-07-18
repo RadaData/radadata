@@ -89,8 +89,6 @@ class CronCommand extends Console\Command\Command
             _log('No jobs found. Initializing a new discovery and download jobs.');
             $this->discoverer->discoverNewLaws();
             $this->downloader->downloadNewLaws();
-            // Dump files to DB
-            // Parse cards
         }
         $this->jobsManager->launch($this->workers);
     }

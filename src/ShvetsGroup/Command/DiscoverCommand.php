@@ -105,6 +105,7 @@ class DiscoverCommand extends Console\Command\Command
                 'law_list_url' => '/laws/main/ay1990/page',
                 'date' => date('Y-m-d', $date),
             ], 'discover');
+            $i++;
         }
 
         while ($date <= strtotime('midnight') && $date < strtotime(max_date())) {
@@ -115,6 +116,7 @@ class DiscoverCommand extends Console\Command\Command
             ], 'discover');
             $date = strtotime(date('c', $date) . '+1 day');
         }
+        return $i;
     }
 
     /**
