@@ -27,7 +27,7 @@ function _log($message, $style = 'default')
 {
 	date_default_timezone_set('Europe/Kiev');
 
-	$output = str_pad(getmypid(), 7, ':&:') . ' | ' . date('Y-m-d H:i:s') . ' :: ' . $message . "\n";
+	$output = str_pad(getmypid(), 7, ':') . ' |%| ' . date('Y-m-d H:i:s') . ' :: ' . $message . "\n";
 	if ($style == 'title') {
 		$output = "\n\n" . $output;
 	}
