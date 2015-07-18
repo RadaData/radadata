@@ -65,7 +65,7 @@ class Downloader
         $page->filterXPath('//*[@id="page"]/div[2]/table/tbody/tr[1]/td[3]/div/dl/dd/ol/li')->each(
             function (\Symfony\Component\DomCrawler\Crawler $node) use (&$data) {
                 $url = $node->filterXPath('//a')->attr('href');
-                $id = preg_replace('|/laws/show/|', '', urldecode(shortURL($url)));
+                $id = preg_replace('|/laws/show/|', '', shortURL($url));
 
                 $raw_date = $node->filterXPath('//font[@color="#004499"]')->text();
                 $raw_date = preg_replace('|([0-9]{2}\.[0-9]{2}\.[0-9]{4}).*|', '$1', $raw_date);
@@ -227,8 +227,6 @@ class Downloader
      */
     public function download($url, $options = [])
     {
-        $url = $this->fullURL($url);
-
         $default_options = [
             're_download'   => false,
             'save'          => true,
@@ -237,7 +235,7 @@ class Downloader
         ];
         $options = array_merge($default_options, $options);
 
-        $save_as = $options['save_as'] ? $this->fullURL($options['save_as']) : null;
+        $save_as = $options['save_as'] ? $options['save_as'] : null;
 
         $output = $this->shortURL($url) . ': ';
         $style = 'default';
@@ -275,7 +273,7 @@ class Downloader
                         while ($matches = $this->detectJSProtection($result['html'])) {
                             $output .= ('-JS-');
                             $attempt++;
-                            $result = $this->doDownload($this->fullURL(urldecode($matches[1])) . '?test=' . $matches[2],
+                            $result = $this->doDownload($matches[1] . '?test=' . $matches[2],
                                 $attempt * 2);
                             $style = 'yellow';
                             if ($attempt > 5) {
@@ -289,7 +287,6 @@ class Downloader
                             $style = 'yellow';
 
                             if ($this->identity->switchIdentity()) {
-                                $url = $this->fullURL($url);
                                 continue 2;
                             } else {
                                 _log($output, 'red');
@@ -359,7 +356,7 @@ class Downloader
             $client->addOption('--proxy=' . $this->proxyManager->getProxyAddress());
         }
         $client->addOption('--load-images=false');
-        $request = $client->getMessageFactory()->createRequest($url);
+        $request = $client->getMessageFactory()->createRequest($this->fullURL($url));
         $request->setDelay($delay);
         $request->setTimeout(60000);
         $request->addHeader('User-Agent', $this->identity->getUserAgent());
@@ -428,7 +425,7 @@ class Downloader
      *
      * @return mixed|string
      */
-    function fullURL($url)
+    function fullURL($url, $urlencode = true)
     {
         $url = $this->shortURL($url);
 
@@ -437,12 +434,22 @@ class Downloader
             $protocol = $matches[0];
             $url = preg_replace('@^(https?|file|ftp)://@', '', $url);
         }
-        $url_parts = explode('/', $url);
-        $new_url = [];
-        foreach ($url_parts as $part) {
-            $new_url[] = urlencode($part);
+
+        if ($urlencode) {
+            list($url, $query) = explode('?', $url . '?');
+            $url_parts = explode('/', $url);
+            $new_url = [];
+            foreach ($url_parts as $part) {
+                $new_url[] = urlencode($part);
+            }
+            $url = $protocol . implode('/', $new_url);
+            if ($query) {
+                $query = urlencode($query);
+                $query = preg_replace('|%3d|i', '=', $query);
+                $query = preg_replace('|%26|i', '&', $query);
+                $url .= '?' . $query;
+            }
         }
-        $url = $protocol . implode('/', $new_url);
 
         if (!preg_match('@^(https?|file|ftp)://@', $url)) {
             $url = $this->identity->getMirror() . $url;
@@ -461,6 +468,10 @@ class Downloader
     function shortURL($url)
     {
         $url = preg_replace('|' . $this->getWebsiteRegexp() . '|', '', $url);
+
+        if (strpos($url, '%') !== false) {
+            $url = urldecode($url);
+        }
 
         return $url;
     }
@@ -484,9 +495,10 @@ class Downloader
      */
     function URL2path($url)
     {
-        $path = urldecode($url);
-        $path = preg_replace('|http://|', '', $path);
-        $path = preg_replace('|zakon[0-9]+\.rada|', 'zakon.rada', $path);
+        $url = $this->fullURL($url, false);
+
+        $path = preg_replace('@(https?|file|ftp)://@', '', $url);
+        $path = preg_replace('@zakon[0-9]+\.rada@', 'zakon.rada', $path);
 
         if (substr($path, -1) == '/') {
             $path .= 'index.html';
