@@ -52,7 +52,6 @@ class JobsManager extends ContainerAware
                 $job->execute($this->container);
             }
         } else {
-            $child = 0;
             while (true) {
                 if (!$this->realWorkersCount($workers_count)) {
                     _log('Can not create any workers. Exiting.' . "\n", 'red');
@@ -143,7 +142,7 @@ class JobsManager extends ContainerAware
      * @param null $service Filter jobs by service.
      * @param null $method  Filter jobs by method.
      *
-     * @return array
+     * @return Job
      */
     public function fetch($group = null, $service = null, $method = null)
     {

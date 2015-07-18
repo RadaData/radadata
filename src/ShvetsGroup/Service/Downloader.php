@@ -3,9 +3,7 @@
 namespace ShvetsGroup\Service;
 
 use JonnyW\PhantomJs\Client as PJClient;
-use ShvetsGroup\Model\Laws\Revision;
 use ShvetsGroup\Service\Proxy\ProxyManager;
-use Symfony\Component\Config\Definition\Exception\Exception;
 use Symfony\Component\DomCrawler\Crawler;
 
 class Downloader

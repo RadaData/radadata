@@ -4,7 +4,6 @@ namespace ShvetsGroup\Command;
 
 use ShvetsGroup\Model\Laws\Law;
 use Symfony\Component\Console as Console;
-use Illuminate\Database\Capsule\Manager as DB;
 
 class CheckCommand extends Console\Command\Command
 {
