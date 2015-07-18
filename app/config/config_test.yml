@@ -1,7 +1,7 @@
 parameters:
     downloads_dir: 'tests/fixtures/downloads'
     use_proxy: 0
-    max_crawl_date: 2015-07-01
+    max_crawl_date: 0
     db:
       database: radadata_test
       username: root

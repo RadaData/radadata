@@ -88,7 +88,7 @@ function container()
 
 function max_date()
 {
-	return container()->getParameter('max_crawl_date') ?: '3000-01-01';
+	return container()->getParameter('max_crawl_date');
 }
 
 /**

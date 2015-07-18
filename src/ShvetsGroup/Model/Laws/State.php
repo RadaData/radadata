@@ -6,7 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class State extends Model
 {
-    const field_name = 'Стан';
+    const FIELD_NAME = 'Стан';
+    const STATE_UNKNOWN = 'Не визначено';
 
     public $timestamps = false;
     public $primaryKey = 'name';

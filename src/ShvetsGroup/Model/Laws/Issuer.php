@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Issuer extends Model
 {
-    const field_name = 'Видавники';
+    const FIELD_NAME = 'Видавники';
 
     public $timestamps = false;
     public $primaryKey = 'name';

@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Type extends Model
 {
-    const field_name = 'Види';
+    const FIELD_NAME = 'Види';
 
     public $timestamps = false;
     public $primaryKey = 'name';

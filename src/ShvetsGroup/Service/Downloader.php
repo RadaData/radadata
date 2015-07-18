@@ -130,7 +130,7 @@ class Downloader
         $data['active_revision'] = null;
         $crawler->filterXPath('//h2[contains(text(), "Історія документа")]/following-sibling::dl[1]')->children()->each(function (Crawler $node) use (&$data, &$last_revision, $law_id) {
             if ($node->getNode(0)->tagName == 'dt') {
-                $raw_date = $node->filterXPath('//span[@style="color: #004499"]')->text();
+                $raw_date = $node->filterXPath('//span[@style="color: #004499" or @style="color: #006600"]')->text();
                 $raw_date = preg_replace('|([0-9]{2}\.[0-9]{2}\.[0-9]{4}).*|', '$1', $raw_date);
                 if (!preg_match('|[0-9]{2}\.[0-9]{2}\.[0-9]{4}|', $raw_date)) {
                     throw new \Exception("Revision date '{$raw_date}' is not valid in card of '{$law_id}'");

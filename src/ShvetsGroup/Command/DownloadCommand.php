@@ -103,9 +103,9 @@ class DownloadCommand extends Console\Command\Command
         DB::transaction(function () use ($law, $card) {
             $law->card = $card['html'];
 
-            $law->issuers()->sync($card['meta'][Laws\Issuer::field_name]);
-            $law->types()->sync($card['meta'][Laws\Type::field_name]);
-            $law->state = reset($card['meta'][Laws\State::field_name]);
+            $law->issuers()->sync($card['meta'][Laws\Issuer::FIELD_NAME]);
+            $law->types()->sync($card['meta'][Laws\Type::FIELD_NAME]);
+            $law->state = isset($card['meta'][Laws\State::FIELD_NAME]) ? reset($card['meta'][Laws\State::FIELD_NAME]) : Laws\State::STATE_UNKNOWN;
 
             $law->has_text = $card['has_text'] ? $law->has_text = Law::HAS_TEXT : $law->has_text = Law::NO_TEXT;
 

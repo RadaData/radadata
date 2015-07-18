@@ -107,7 +107,7 @@ class DiscoverCommand extends Console\Command\Command
             ], 'discover');
         }
 
-        while ($date <= strtotime('midnight') && $date < strtotime(max_date())) {
+        while ($date <= strtotime('midnight') && (!max_date() || (max_date() && $date < strtotime(max_date())))) {
             $this->jobsManager->add('discover_command', 'discoverDailyLawList', [
                 'law_list_url' => '/laws/main/a' . date('Ymd', $date) . '/sp5/page',
                 'date' => date('Y-m-d', $date),
