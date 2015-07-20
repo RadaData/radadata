@@ -49,6 +49,7 @@ class CronCommand extends Console\Command\Command
         $this->addOption('single', 's', Console\Input\InputOption::VALUE_NONE, 'Run single instance of the script (old instances will be terminated).');
         $this->addOption('proxy', 'p', Console\Input\InputOption::VALUE_OPTIONAL, 'Whether or not to use proxy servers and how much proxies to create.');
         $this->addOption('kill_old_proxies', 'k', Console\Input\InputOption::VALUE_NONE, 'Kill old proxies and create new.');
+        $this->addOption('job', 'j', Console\Input\InputOption::VALUE_OPTIONAL, 'Execute specific job.');
 
         $this->discoverer = $discoverer;
         $this->downloader = $downloader;
@@ -85,6 +86,17 @@ class CronCommand extends Console\Command\Command
 
         if ($this->proxyManager->useProxy()) {
             $this->proxyManager->connect($this->workers, $input->getOption('kill_old_proxies'));
+        }
+
+        if ($job_id = $input->getOption('job')) {
+            $job = Job::find($job_id);
+            if ($job) {
+                $job->execute(container());
+            }
+            else {
+                _log("Job {$job_id} is not found.");
+            }
+            return;
         }
 
         if (!$this->jobsManager->count()) {
