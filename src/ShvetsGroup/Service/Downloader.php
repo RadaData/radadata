@@ -529,7 +529,8 @@ class Downloader
             'Дуже багато відкритих сторінок за хвилину',
             'Доступ до списку заборонен',
             'Документи потрібно відкривати по одному',
-            'Сторiнку не знайдено'
+            'Сторiнку не знайдено',
+            'Доступ тимчасово обмежено'
         ];
         if (isset($requirements['stop']) && is_array($requirements['stop'])) {
             $default_stop = array_merge($default_stop, $requirements['stop']);
