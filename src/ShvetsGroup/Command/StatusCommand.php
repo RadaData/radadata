@@ -52,7 +52,10 @@ class StatusCommand extends Console\Command\Command
     {
         DB::beginTransaction();
 
-        $errors = substr_count(file_get_contents(LOG_PATH . 'log.txt'), '|%|');
+        $errors = 0;
+        if (file_exists(LOG_PATH . 'log.txt')) {
+            $errors = substr_count(file_get_contents(LOG_PATH . 'log.txt'), '|%|');
+        }
 
         $discovered_count = Law::count();
         $most_recent = Law::orderBy('date', 'desc')->take(1)->value('date');
