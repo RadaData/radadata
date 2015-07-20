@@ -57,17 +57,12 @@ class CheckCommand extends Console\Command\Command
 
         function is_fake($html, $is_text = true)
         {
-            return downloader()->detectFakeContent($html, [
-                'required' => ['<div id="article"', '</body>'],
-                'stop'     => $is_text ? ['<div id="pan_title"'] : null
-            ]);
+            return downloader()->detectFakeContent($html);
         }
 
         function is_403($html)
         {
-            return downloader()->detectFakeContent($html, [
-                'stop' => ['Error 403', 'Доступ заборонено', 'Ваш IP автоматично заблоковано']
-            ]);
+            return downloader()->detectFakeContent($html, '403');
         }
 
         function remove_dir($dir)

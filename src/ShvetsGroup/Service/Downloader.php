@@ -12,6 +12,24 @@ class Downloader
     const SUCCESS = 10;
     const FAILURE = 3;
 
+    private $stop_words = [
+        '404' => [
+            '502 Bad Gateway',
+            'Ліміт перегляду списків на сьогодні',
+            'Дуже багато відкритих сторінок за хвилину',
+            'Доступ до списку заборонен',
+            'Документи потрібно відкривати по одному',
+            'Сторiнку не знайдено',
+            'Доступ тимчасово обмежено',
+            'Список з назвою відсутній!'
+        ],
+        '403' => [
+            'Error 403',
+            'Доступ заборонено',
+            'Ваш IP автоматично заблоковано'
+        ]
+    ];
+
     /**
      * Where to download the web pages.
      *
@@ -219,7 +237,6 @@ class Downloader
      *                    - bool $re_download Whether or not to re-download the page if it's already in cache.
      *                    - bool $save Whether or not to cache a local copy of the page.
      *                    - string $save_as Alternative file name for the page.
-     *                    - array $required_text If passed, this text should be found on the page in order to count the
      *                    download successful.
      *
      * @return string
@@ -231,7 +248,6 @@ class Downloader
             're_download'   => false,
             'save'          => true,
             'save_as'       => null,
-            'required_text' => [],
         ];
         $options = array_merge($default_options, $options);
 
@@ -243,13 +259,20 @@ class Downloader
         if ($this->isDownloaded($save_as ?: $url) && !$options['re_download']) {
             $file_path = $this->URL2path($save_as ?: $url);
             $html = file_get_contents($file_path);
-            $output .= ('* ');
-            _log($output);
 
-            return [
-                'html' => $html,
-                'timestamp' => filemtime($file_path)
-            ];
+            if ($this->detectFakeContent($html)) {
+                unlink($file_path);
+            }
+            else {
+
+                $output .= ('* ');
+                _log($output);
+
+                return [
+                    'html'      => $html,
+                    'timestamp' => filemtime($file_path)
+                ];
+            }
         }
 
         $output = ($this->proxyManager->getProxyAddress() . '/' . $this->proxyManager->getProxyIp() . ' → ' . $output);
@@ -263,7 +286,7 @@ class Downloader
                     case 200:
                     case 301:
                     case 302:
-                        if (strpos($result['html'], 'Error 403') !== false || strpos($result['html'], 'Доступ заборонено') !== false || strpos($result['html'], 'Ваш IP автоматично заблоковано')) {
+                        if ($this->detectFakeContent($html, '403')) {
                             $output .= ('-S403 ');
                             _log($output, 'red');
                             $this->proxyManager->banProxy();
@@ -282,7 +305,7 @@ class Downloader
                             }
                         }
 
-                        if ($this->detectFakeContent($result['html'], $options['required_text'])) {
+                        if ($this->detectFakeContent($result['html'], '404')) {
                             $output .= ('-F-');
                             $style = 'yellow';
 
@@ -515,42 +538,27 @@ class Downloader
      * such cases to signal page for re-download.
      *
      * @param string $html HTML content of the page.
-     * @param array  $requirements
-     *                     - array['stop'] List of strings which should NOT be in text.
-     *                     - array['required'] List of string which should be in text to pass check.
      *
      * @return bool
      */
-    public function detectFakeContent($html, $requirements = [])
+    public function detectFakeContent($html, $type = 'all')
     {
-        $default_stop = [
-            '502 Bad Gateway',
-            'Ліміт перегляду списків на сьогодні',
-            'Дуже багато відкритих сторінок за хвилину',
-            'Доступ до списку заборонен',
-            'Документи потрібно відкривати по одному',
-            'Сторiнку не знайдено',
-            'Доступ тимчасово обмежено'
-        ];
-        if (isset($requirements['stop']) && is_array($requirements['stop'])) {
-            $default_stop = array_merge($default_stop, $requirements['stop']);
+        if ($type == 'all') {
+            $words = array_merge($this->stop_words['404'], $this->stop_words['403']);
         }
-        foreach ($default_stop as $stop) {
-            if (strpos($html, $stop) !== false) {
+        else {
+            $words = $this->stop_words[$type];
+        }
+        return $this->contains($html, $words);
+    }
+
+    private function contains($str, array $arr, $all = false)
+    {
+        foreach($arr as $a) {
+            if ((!$all && stripos($str,$a) !== false)) {
                 return true;
             }
         }
-
-        $default_required = [];
-        if (isset($requirements['required']) && is_array($requirements['required'])) {
-            $default_required = array_merge($default_required, $requirements['required']);
-        }
-        foreach ($default_required as $rt) {
-            if (strpos($html, $rt) === false) {
-                return true;
-            }
-        }
-
         return false;
     }
 
