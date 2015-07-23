@@ -286,7 +286,7 @@ class Downloader
                     case 200:
                     case 301:
                     case 302:
-                        if ($this->detectFakeContent($html, '403')) {
+                        if ($this->detectFakeContent($result['html'], '403')) {
                             $output .= ('-S403 ');
                             _log($output, 'red');
                             $this->proxyManager->banProxy();
