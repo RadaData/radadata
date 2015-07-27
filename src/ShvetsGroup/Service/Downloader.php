@@ -23,12 +23,14 @@ class Downloader
             'Доступ тимчасово обмежено',
             'Документ не знайдено!',
             'Цього списку вже немає в кеші.',
-            '??.??.????'
         ],
         '403' => [
             'Error 403',
             'Доступ заборонено',
             'Ваш IP автоматично заблоковано'
+        ],
+        'error' => [
+            '??.??.????'
         ]
     ];
 
@@ -302,9 +304,12 @@ class Downloader
                                 $attempt * 2);
                             $style = 'yellow';
                             if ($attempt > 5) {
-                                _log($output, 'red');
                                 throw new \Exception('Can not break JS protection.');
                             }
+                        }
+
+                        if ($this->detectFakeContent($result['html'], 'error')) {
+                            throw new \Exception('Content has errors. Parsing rescheduled.');
                         }
 
                         if ($this->detectFakeContent($result['html'], '404')) {
@@ -314,7 +319,6 @@ class Downloader
                             if ($this->identity->switchIdentity()) {
                                 continue 2;
                             } else {
-                                _log($output, 'red');
                                 throw new \Exception('Resource is not available (f).');
                             }
                         }
@@ -343,8 +347,6 @@ class Downloader
                         continue 2;
                         break;
                     case 404:
-                        $output .= ('-S' . $result['status'] . ' ');
-                        _log($output, 'red');
                         throw new \Exception('Page is 404.');
                         break;
                     default:
@@ -355,9 +357,9 @@ class Downloader
                         break;
                 }
             } catch (\Exception $e) {
-                $attempt += 3;
                 $output .= ('-E(' . $e->getMessage() . ')-');
-                continue;
+                _log($output, 'red');
+                break;
             }
         }
 
