@@ -163,10 +163,9 @@ class DownloadCommand extends Console\Command\Command
     {
         $law = Law::find($law_id);
         $revision = $law->getRevision($date);
+        $data = downloadRevision($revision->law_id, $revision->date);
 
-        DB::transaction(function () use ($law, $revision) {
-            $data = downloadRevision($revision->law_id, $revision->date);
-
+        DB::transaction(function () use ($law, $revision, $data) {
             $revision->update([
                 'text'         => $data['text'],
                 'text_updated' => $data['timestamp'],
