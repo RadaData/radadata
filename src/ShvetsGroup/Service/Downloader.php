@@ -21,7 +21,8 @@ class Downloader
             'Документи потрібно відкривати по одному',
             'Сторiнку не знайдено',
             'Доступ тимчасово обмежено',
-            'Документ не знайдено!'
+            'Документ не знайдено!',
+            'Цього списку вже немає в кеші.'
         ],
         '403' => [
             'Error 403',
@@ -543,6 +544,9 @@ class Downloader
      */
     public function detectFakeContent($html, $type = 'all')
     {
+        if ($html == '') {
+            return true;
+        }
         if ($type == 'all') {
             $words = array_merge($this->stop_words['404'], $this->stop_words['403']);
         }
