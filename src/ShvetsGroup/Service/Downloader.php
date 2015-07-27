@@ -359,7 +359,6 @@ class Downloader
                 }
             } catch (\Exception $e) {
                 $output .= ('-E(' . $e->getMessage() . ')-');
-                _log($output, 'red');
                 break;
             }
         }
