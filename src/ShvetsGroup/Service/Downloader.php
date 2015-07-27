@@ -317,6 +317,7 @@ class Downloader
                             $style = 'yellow';
 
                             if ($this->identity->switchIdentity()) {
+                                $attempt++;
                                 continue 2;
                             } else {
                                 throw new \Exception('Resource is not available (f).');
