@@ -181,7 +181,7 @@ class DownloadCommand extends Console\Command\Command
             $this->downloadCard($law->id, true);
             $data = downloadRevision($revision->law_id, $revision->date, ['re_download' => $re_download]);
         } catch (\Exception $e) {
-            throw new Exceptions\JobChangePriorityException(-10);
+            throw new Exceptions\JobChangePriorityException($e->getMessage(), -10);
         }
 
         DB::transaction(function () use ($law, $revision, $data) {

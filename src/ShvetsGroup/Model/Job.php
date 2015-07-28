@@ -30,7 +30,7 @@ class Job extends Model
         }
         catch(\Exception $e) {
             if ($e instanceof Exceptions\JobChangePriorityException) {
-                _log('JOB#' . $this->id . ' FAILURE. Priority changed to ' . $e->newPriority, 'red');
+                _log('JOB#' . $this->id . ' FAILURE(' . $e->getMessage() . '). Priority changed to ' . $e->newPriority, 'red');
                 $this->update(['priority' => $e->newPriority]);
             }
             else {

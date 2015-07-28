@@ -201,11 +201,13 @@ class Downloader
     }
 
     /**
-     * @param       $law_id
-     * @param       $date
-     * @param array $options
+     * @param string $law_id
+     * @param string $date
+     * @param array  $options
      *
      * @return string
+     * @throws Exceptions\RevisionDateNotFound
+     * @throws Exceptions\WrongDateException
      */
     public function downloadRevision($law_id, $date, $options = [])
     {
@@ -261,7 +263,11 @@ class Downloader
      *                    download successful.
      *
      * @return string
-     * @throws \Exception
+     * @throws Exceptions\DocumentCantBeDownloaded
+     * @throws Exceptions\DocumentHasErrors
+     * @throws Exceptions\DocumentIsMissing
+     * @throws Exceptions\ProxyBanned
+     * @throws Exceptions\UnknownProblem
      */
     public function download($url, $options = [])
     {
@@ -326,8 +332,8 @@ class Downloader
                 }
 
                 // document is ok, but has errors
-                if ($result['status'] == 200 && $this->detectFakeContent($result['html'], 'error')) {
-                    throw new Exceptions\DocumentHasErrors();
+                if ($result['status'] == 200 && $errors = $this->detectFakeContent($result['html'], 'error')) {
+                    throw new Exceptions\DocumentHasErrors($errors);
                 }
 
                 // document is ok, but JS protected
@@ -447,6 +453,7 @@ class Downloader
      * Return full URL (with domain name) of the page by given path or short url.
      *
      * @param string $url Path or short URL.
+     * @param bool   $urlencode
      *
      * @return mixed|string
      */
@@ -540,13 +547,14 @@ class Downloader
      * such cases to signal page for re-download.
      *
      * @param string $html HTML content of the page.
+     * @param string $type Type of error to detect (all, 403, 404).
      *
      * @return bool
      */
     public function detectFakeContent($html, $type = 'all')
     {
         if ($html == '' && ($type != '403')) {
-            return true;
+            return '{document is empty}';
         }
         if ($type == 'all') {
             $words = array_merge($this->stop_words['404'], $this->stop_words['403']);
@@ -557,11 +565,11 @@ class Downloader
         return $this->contains($html, $words);
     }
 
-    private function contains($str, array $arr, $all = false)
+    private function contains($str, array $arr)
     {
         foreach ($arr as $a) {
-            if ((!$all && stripos($str, $a) !== false)) {
-                return true;
+            if (stripos($str, $a) !== false) {
+                return $str;
             }
         }
 
@@ -589,11 +597,10 @@ class Downloader
         $raw_date = preg_replace('|([0-9]{2}\.[0-9]{2}\.[0-9]{4}).*|', '$1', $radaDate);
         if (!preg_match('|[0-9]{2}\.[0-9]{2}\.[0-9]{4}|', $raw_date)) {
             $error_text = $error_text ?: "Date {$radaDate} is not valid date.";
-            throw new \Exception($error_text);
+            throw new Exceptions\WrongDateException($error_text);
         }
         $date = date_format(date_create_from_format('d.m.Y', $raw_date), 'Y-m-d');
 
         return $date;
     }
-
 }
