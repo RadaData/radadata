@@ -339,25 +339,30 @@ class Downloader
                     }
                 }
 
-                // document is ok, but has errors
+                // status is ok, bit document load was not finished
+                if ($result['status'] == 200 && strpos($result['html'], '</html>') === false) {
+                    continue;
+                }
+
+                // status is ok, but document content has errors
                 if ($result['status'] == 200 && $errors = $this->detectFakeContent($result['html'], 'error')) {
                     throw new Exceptions\DocumentHasErrors($errors);
                 }
 
-                // document is ok, but JS protected
+                // status is ok, but document JS protected
                 if ($result['status'] == 200 && $this->detectJSProtection($result['html'])) {
                     $newUrl = $this->detectJSProtection($result['html']);
                     $result = $this->doDownload($newUrl, 10);
 
                     if ($this->detectJSProtection($result['html'])) {
-                        throw new Exceptions\DocumentCantBeDownloaded();
+                        throw new Exceptions\DocumentCantBeDownloaded('Strong JS protection.');
                     }
                     if ($this->detectFakeContent($result['html'])) {
                         continue;
                     }
                 }
 
-                // document is ok
+                // status is ok, no other problems
                 if ($result['status'] == 200) {
                     if ($options['save']) {
                         $this->saveFile($save_as ?: $url, $result['html']);
@@ -373,7 +378,7 @@ class Downloader
 
             } while ($attempts < 3);
 
-            throw new Exceptions\DocumentCantBeDownloaded();
+            throw new Exceptions\DocumentCantBeDownloaded('Too many failed attempts.');
         }
         finally {
             $this->proxyManager->releaseProxy();
