@@ -211,6 +211,17 @@ class Downloader
      */
     public function downloadRevision($law_id, $date, $options = [])
     {
+        function getRevisionDate($html, $default_date, $url) {
+            if (strpos($html, 'txt txt-old') !== false) {
+                $revision_date = $default_date;
+            }
+            else {
+                $raw_date = crawler($html)->filterXPath('//div[@id="pan_title"]/*/font[@color="#004499"]/b')->text();
+                $revision_date = $this->parseDate($raw_date, "Revision date has not been found in text of $url");
+            }
+            return $revision_date;
+        }
+
         $law = Law::find($law_id);
         $law_url = '/laws/show/' . $law_id;
         $edition_part = '/ed' . date_format(date_create_from_format('Y-m-d', $date), 'Ymd');
@@ -226,11 +237,10 @@ class Downloader
         $data = download($url, $options);
         $crawler = crawler($data['html'])->filter('.txt');
         $data['text'] = $crawler->html();
-        $raw_date = crawler($data['html'])->filterXPath('//div[@id="pan_title"]/*/font[@color="#004499"]/b')->text();
-        $revision_date = $this->parseDate($raw_date, "Revision date has not been found in text of $url");
 
+        $revision_date = getRevisionDate($data['html'], $date, $url);
         if ($revision_date != $date) {
-            throw new Exceptions\RevisionDateNotFound("Revision date does not match the planned date (planned: {$date}, but found {$data['revision_date']}).");
+            throw new Exceptions\RevisionDateNotFound("Revision date does not match the planned date (planned: {$date}, but found {$revision_date}).");
         }
 
         $pager = crawler($data['html'])->filterXPath('(//span[@class="nums"])[1]/br/preceding-sibling::a[1]');
@@ -242,8 +252,7 @@ class Downloader
             $new_data = download($page_url, $options);
             $data['text'] .= crawler($new_data['html'])->filter('.txt')->html();
 
-            $raw_date = crawler($new_data['html'])->filterXPath('//div[@id="pan_title"]/*/font[@color="#004499"]/b')->text();
-            $revision_date = $this->parseDate($raw_date, "Revision date has not been found in text of $url");
+            $revision_date = getRevisionDate($new_data['html'], $date, $url);
             if ($revision_date != $date) {
                 throw new Exceptions\RevisionDateNotFound("Revision date does not match the planned date (planned: {$date}, but found {$revision_date}).");
             }
