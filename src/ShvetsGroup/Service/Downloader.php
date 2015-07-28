@@ -7,6 +7,7 @@ use ShvetsGroup\Model\Laws\Law;
 use ShvetsGroup\Service\Proxy\ProxyManager;
 use Symfony\Component\Config\Definition\Exception\Exception;
 use Symfony\Component\DomCrawler\Crawler;
+use ShvetsGroup\Service\Exceptions;
 
 class Downloader
 {
@@ -15,7 +16,7 @@ class Downloader
     const FAILURE = 3;
 
     private $stop_words = [
-        '404' => [
+        '404'   => [
             '502 Bad Gateway',
             'Ліміт перегляду списків на сьогодні',
             'Дуже багато відкритих сторінок за хвилину',
@@ -26,10 +27,11 @@ class Downloader
             'Документ не знайдено!',
             'Цього списку вже немає в кеші.',
         ],
-        '403' => [
+        '403'   => [
             'Error 403',
             'Доступ заборонено',
-            'Ваш IP автоматично заблоковано'
+            'Ваш IP автоматично заблоковано',
+            'Ви потрапили до забороненого ресурсу'
         ],
         'error' => [
             '??.??.????'
@@ -124,7 +126,7 @@ class Downloader
      *   ]
      * ]
      *
-     * @throws \Exception
+     * @throws Exceptions\DocumentHasErrors
      */
     public function downloadCard($law_id, $options = [])
     {
@@ -167,7 +169,7 @@ class Downloader
                     $data['active_revision'] = $data['revisions'][$last_revision]['date'];
                 }
             } elseif ($node->getNode(0)->tagName == 'dd') {
-                if (strpos($node->html(), '<a name="Current"></a>') !== FALSE) {
+                if (strpos($node->html(), '<a name="Current"></a>') !== false) {
                     $data['active_revision'] = $data['revisions'][$last_revision]['date'];
                     $data['revisions'][$last_revision]['needs_update'] = true;
                 }
@@ -179,7 +181,7 @@ class Downloader
         }
 
         if (!$data['active_revision'] && $data['has_text']) {
-            throw new \Exception("Card has text, but no revisions in '{$law_id}'");
+            throw new Exceptions\DocumentHasErrors("Card has text, but no revisions in '{$law_id}'");
         }
 
         if (isset($options['check_related']) && $options['check_related']) {
@@ -214,8 +216,7 @@ class Downloader
         if ($law->active_revision == $date) {
             $url = $law_url;
             $options['save_as'] = $law_url . $edition_part . '/page';
-        }
-        else {
+        } else {
             $url = $law_url . $edition_part;
             $options['save_as'] = $law_url . $edition_part . '/page';
         }
@@ -230,16 +231,16 @@ class Downloader
             throw new Exceptions\RevisionDateNotFound("Revision date does not match the planned date (planned: {$date}, but found {$data['revision_date']}).");
         }
 
-        $pager = $crawler->filterXPath('(//span[@class="nums"])[1]/br/preceding-sibling::a[1]');
+        $pager = crawler($data['html'])->filterXPath('(//span[@class="nums"])[1]/br/preceding-sibling::a[1]');
         $page_count = $pager->count() ? $pager->text() : 1;
 
         for ($i = 2; $i <= $page_count; $i++) {
             $page_url = $url . '/page' . $i;
             $options['save_as'] = $law_url . $edition_part . '/page' . $i;
-            $data = download($page_url, $options);
-            $data['text'] .= crawler($data['html'])->filter('.txt')->html();
+            $new_data = download($page_url, $options);
+            $data['text'] .= crawler($new_data['html'])->filter('.txt')->html();
 
-            $raw_date = crawler($data['html'])->filterXPath('//div[@id="pan_title"]/*/font[@color="#004499"]/b')->text();
+            $raw_date = crawler($new_data['html'])->filterXPath('//div[@id="pan_title"]/*/font[@color="#004499"]/b')->text();
             $revision_date = $this->parseDate($raw_date, "Revision date has not been found in text of $url");
             if ($revision_date != $date) {
                 throw new Exceptions\RevisionDateNotFound("Revision date does not match the planned date (planned: {$date}, but found {$revision_date}).");
@@ -265,9 +266,9 @@ class Downloader
     public function download($url, $options = [])
     {
         $default_options = [
-            're_download'   => false,
-            'save'          => true,
-            'save_as'       => null,
+            're_download' => false,
+            'save'        => true,
+            'save_as'     => null,
         ];
         $options = array_merge($default_options, $options);
 
@@ -282,8 +283,7 @@ class Downloader
 
             if ($this->detectFakeContent($html)) {
                 unlink($file_path);
-            }
-            else {
+            } else {
 
                 $output .= ('* ');
                 _log($output);
@@ -295,95 +295,71 @@ class Downloader
             }
         }
 
-        $output = ($this->proxyManager->getProxyAddress() . '/' . $this->proxyManager->getProxyIp() . ' → ' . $output);
+        $output = ($this->proxyManager->getProxyAddress() . '/' . $this->proxyManager->getProxyIp() . ' → ' . $output . ' @');
+        _log($output);
 
-        $attempt = 0;
-        while ($attempt < Downloader::FAILURE) {
-            try {
-                $result = $this->doDownload($url);
+        $attempts = 0;
+        do {
+            $attempts++;
+            $result = $this->doDownload($url);
 
-                switch ($result['status']) {
-                    case 200:
-                    case 301:
-                    case 302:
-                        if ($this->detectFakeContent($result['html'], '403')) {
-                            $output .= ('-S403 ');
-                            _log($output, 'red');
-                            $this->proxyManager->banProxy();
-                            die();
-                        }
-
-                        while ($matches = $this->detectJSProtection($result['html'])) {
-                            $output .= ('-JS-');
-                            $attempt++;
-                            $result = $this->doDownload($matches[1] . '?test=' . $matches[2],
-                                $attempt * 2);
-                            $style = 'yellow';
-                            if ($attempt > 5) {
-                                throw new \Exception('Can not break JS protection.');
-                            }
-                        }
-
-                        if ($this->detectFakeContent($result['html'], 'error')) {
-                            throw new \Exception('Content has errors. Parsing rescheduled.');
-                        }
-
-                        if ($this->detectFakeContent($result['html'], '404')) {
-                            $output .= ('-F-');
-                            $style = 'yellow';
-
-                            if ($this->identity->switchIdentity()) {
-                                $attempt++;
-                                continue 2;
-                            } else {
-                                throw new \Exception('Resource is not available (f).');
-                            }
-                        }
-
-                        if ($options['save']) {
-                            $this->saveFile($save_as ?: $url, $result['html']);
-                        }
-
-                        $output .= ('@' . $result['status'] . ' ');
-                        _log($output, $style);
-
-                        $this->proxyManager->releaseProxy();
-
-                        return [
-                            'html' => $result['html'],
-                            'timestamp' => time()
-                        ];
-                    case 403:
-                        $output .= ('-S' . $result['status'] . ' ');
-                        _log($output, 'red');
-                        if (strpos($result['html'], 'Ви потрапили до забороненого ресурсу') !== false) {
-                            $this->proxyManager->banProxy();
-                            die();
-                        }
-                        $attempt++;
-                        continue 2;
-                        break;
-                    case 404:
-                        throw new \Exception('Page is 404.');
-                        break;
-                    default:
-                        $attempt += 1;
-                        $output .= ('-S' . $result['status'] . '-');
-                        $style = 'yellow';
-                        continue 2;
-                        break;
-                }
-            } catch (\Exception $e) {
-                $output .= ('-E(' . $e->getMessage() . ')-');
-                _log($output, 'red');
-                $this->proxyManager->releaseProxy();
-                throw new \Exception($e->getMessage());
+            // redirect
+            if ($result['status'] > 300 && $result['status'] < 310) {
+                continue;
             }
-        }
 
-        _log($output, 'red');
-        $this->proxyManager->releaseProxy();
-        throw new \Exception('Resource is not available (a).');
+            // access denied
+            if ($result['status'] == 403 || $this->detectFakeContent($result['html'], '403')) {
+                $this->proxyManager->banProxy();
+                throw new Exceptions\ProxyBanned($this->proxyManager->getProxyIp());
+            }
+
+            // document is missing or server might be down
+            if ($result['status'] > 400 || ($result['status'] == 200 && $this->detectFakeContent($result['html'], '404'))) {
+                $hasMoreIdentities = $this->identity->switchIdentity();
+                if ($hasMoreIdentities) {
+                    continue;
+                } else {
+                    throw new Exceptions\DocumentIsMissing();
+                }
+            }
+
+            // document is ok, but has errors
+            if ($result['status'] == 200 && $this->detectFakeContent($result['html'], 'error')) {
+                throw new Exceptions\DocumentHasErrors();
+            }
+
+            // document is ok, but JS protected
+            if ($result['status'] == 200 && $this->detectJSProtection($result['html'])) {
+                $newUrl = $this->detectJSProtection($result['html']);
+                $result = $this->doDownload($newUrl, 10);
+
+                if ($this->detectJSProtection($result['html'])) {
+                    throw new Exceptions\DocumentCantBeDownloaded();
+                }
+                if ($this->detectFakeContent($result['html'])) {
+                    continue;
+                }
+            }
+
+            // document is ok
+            if ($result['status'] == 200) {
+                if ($options['save']) {
+                    $this->saveFile($save_as ?: $url, $result['html']);
+                }
+                $this->proxyManager->releaseProxy();
+
+                return [
+                    'html'      => $result['html'],
+                    'timestamp' => time()
+                ];
+            }
+
+            throw new Exceptions\UnknownProblem("Download status is {$result['status']}.", $this->shortURL($url), isset($data['html']) ? $data['html'] : '{NO DATA}');
+
+        } while ($attempts < 3);
+
+        throw new Exceptions\DocumentCantBeDownloaded();
     }
 
     /**
@@ -565,25 +541,26 @@ class Downloader
      */
     public function detectFakeContent($html, $type = 'all')
     {
-        if ($html == '') {
+        if ($html == '' && ($type != '403')) {
             return true;
         }
         if ($type == 'all') {
             $words = array_merge($this->stop_words['404'], $this->stop_words['403']);
-        }
-        else {
+        } else {
             $words = $this->stop_words[$type];
         }
+
         return $this->contains($html, $words);
     }
 
     private function contains($str, array $arr, $all = false)
     {
-        foreach($arr as $a) {
-            if ((!$all && stripos($str,$a) !== false)) {
+        foreach ($arr as $a) {
+            if ((!$all && stripos($str, $a) !== false)) {
                 return true;
             }
         }
+
         return false;
     }
 
@@ -597,7 +574,7 @@ class Downloader
     public function detectJSProtection($html)
     {
         if (preg_match('|<a href="?(.*)\?test=(.*)"? target="?_top"?><b>посилання</b></a>|', $html, $matches)) {
-            return $matches;
+            return $matches[1] . '?test=' . $matches[2];
         }
 
         return false;

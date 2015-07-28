@@ -195,10 +195,8 @@ class ProxyManager
             return;
         }
 
-        _log('Proxy ' . $this->proxy->ip . ' banned.', 'red');
         DB::table('proxy')->where('address', $this->proxy->address)->delete();
         $this->proxyProvider->ban($this->proxy->ip);
-        _log('Proxy ' . $this->proxy->ip . ' terminated.', 'red');
     }
 
     /**

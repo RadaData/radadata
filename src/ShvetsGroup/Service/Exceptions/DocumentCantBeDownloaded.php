@@ -2,7 +2,7 @@
 
 namespace ShvetsGroup\Service\Exceptions;
 
-class RevisionDateNotFound extends ContentError
+class DocumentCantBeDownloaded extends DownloadError
 {
 
 }

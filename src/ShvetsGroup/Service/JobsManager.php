@@ -149,7 +149,7 @@ class JobsManager extends ContainerAware
         $job = null;
 
         DB::transaction(function () use ($group, $service, $method, &$job) {
-            $query = Job::where('claimed', 0)->where('finished', 0)->orderBy('id');
+            $query = Job::where('claimed', 0)->where('finished', 0)->orderBy('priority', 'DESC')->orderBy('id');
             if ($group) {
                 $query->where('group', $group);
             }
@@ -174,12 +174,19 @@ class JobsManager extends ContainerAware
      * @param string      $method     Name of the method to execute.
      * @param array       $parameters List of parameters to pass to the method.
      * @param string      $group      Job group (could be used as a filter).
+     * @param int         $priority   Job priority (bigger = more important).
      *
      * @return bool
      */
-    public function add($service, $method, $parameters, $group)
+    public function add($service, $method, $parameters, $group, $priority = 0)
     {
-        Job::updateOrCreate(['service' => $service, 'method' => $method, 'parameters' => $parameters, 'group' => $group]);
+        Job::updateOrCreate([
+            'service' => $service,
+            'method' => $method,
+            'parameters' => $parameters,
+            'group' => $group,
+            'priority' => $priority
+        ]);
     }
 
     /**

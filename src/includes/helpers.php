@@ -54,6 +54,19 @@ function _log($message, $style = 'default')
 	print($output);
 }
 
+function _logDump($filename, $data)
+{
+	if (!is_dir(LOG_PATH)) {
+		mkdir(LOG_PATH);
+	}
+	$dump_dir = LOG_PATH . 'dumps/';
+	if (!is_dir($dump_dir)) {
+		mkdir($dump_dir);
+	}
+	file_put_contents($dump_dir . $filename, $data);
+}
+
+
 function delTree($dir) {
 	$files = array_diff(scandir($dir), ['.','..']);
 	foreach ($files as $file) {

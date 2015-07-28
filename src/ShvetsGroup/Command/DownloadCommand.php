@@ -73,10 +73,11 @@ class DownloadCommand extends Console\Command\Command
         });
         Laws\Revision::where('status', Laws\Revision::NEEDS_UPDATE)->chunk(200, function ($revisions) {
             foreach ($revisions as $revision) {
+                $law = Law::find($revision->law_id);
                 $this->jobsManager->add('download_command', 'downloadRevision', [
                     'law_id' => $revision->law_id,
                     'date'   => $revision->date,
-                ], 'download');
+                ], 'download', $law->active_revision == $revision->date ? 0 : -1);
             }
         });
     }
@@ -96,10 +97,14 @@ class DownloadCommand extends Console\Command\Command
          */
         $law = Law::find($id);
 
-        $card = downloadCard($id, [
-            're_download'   => $re_download || $this->re_download,
-            'check_related' => $law->status == Law::NOT_DOWNLOADED && !max_date()
-        ]);
+        try {
+            $card = downloadCard($id, [
+                're_download'   => $re_download || $this->re_download,
+                'check_related' => $law->status == Law::NOT_DOWNLOADED && !max_date()
+            ]);
+        } catch (\Exception $e) {
+            throw new JobChangePriorityException(-5);
+        }
 
         DB::transaction(function () use ($law, $card) {
             $law->card = $card['html'];
@@ -131,7 +136,7 @@ class DownloadCommand extends Console\Command\Command
                 $this->jobsManager->add('download_command', 'downloadRevision', [
                     'law_id' => $revision->law_id,
                     'date'   => $revision->date,
-                ], 'download');
+                ], 'download', $revision->date == $law->active_revision ? 0 : -1);
             }
 
             if (isset($card['changes_laws']) && $card['changes_laws']) {
@@ -175,6 +180,8 @@ class DownloadCommand extends Console\Command\Command
         } catch (Exceptions\RevisionDateNotFound $e) {
             $this->downloadCard($law->id, true);
             $data = downloadRevision($revision->law_id, $revision->date, ['re_download' => $re_download]);
+        } catch (\Exception $e) {
+            throw new JobChangePriorityException(-10);
         }
 
         DB::transaction(function () use ($law, $revision, $data) {
