@@ -375,7 +375,7 @@ class Downloader
 
                 throw new Exceptions\UnknownProblem("Download status is {$result['status']}.", $this->shortURL($url), isset($data['html']) ? $data['html'] : '{NO DATA}');
 
-            } while ($attempts < 3);
+            } while ($attempts < 5);
 
             throw new Exceptions\DocumentCantBeDownloaded('Too many failed attempts.');
         }
