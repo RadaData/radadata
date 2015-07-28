@@ -355,7 +355,7 @@ class Downloader
                 }
 
                 // status is ok, no other problems
-                if (in_array($result['status'], [200, 300, 301, 302, 303, 304, 307])) {
+                if (in_array($result['status'], [200, 300, 301, 302, 303, 304, 307, 408])) {
                     $output .= '-' . $result['status'] . '-OK';
 
                     if ($options['save']) {
