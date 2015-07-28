@@ -300,10 +300,13 @@ class Downloader
 
         try {
             $output = ($this->proxyManager->getProxyAddress() . '/' . $this->proxyManager->getProxyIp() . ' → ' . $output . ' @');
-            _log($output);
 
+            $result = [];
             $attempts = 0;
             do {
+                if ($result) {
+                    $output .= '-' . $result['status'];
+                }
                 $attempts++;
                 $result = $this->doDownload($url);
 
@@ -322,6 +325,7 @@ class Downloader
                 if ($result['status'] > 400 || ($result['status'] == 200 && $this->detectFakeContent($result['html'], '404'))) {
                     $hasMoreIdentities = $this->identity->switchIdentity();
                     if ($hasMoreIdentities) {
+                        $result['status'] = $result['status'] != 200 ? $result['status'] : 204;
                         continue;
                     } else {
                         throw new Exceptions\DocumentIsMissing();
@@ -330,6 +334,7 @@ class Downloader
 
                 // status is ok, bit document load was not finished
                 if ($result['status'] == 200 && strpos($result['html'], '</html>') === false) {
+                    $result['status'] = 205;
                     continue;
                 }
 
@@ -347,6 +352,7 @@ class Downloader
                         throw new Exceptions\DocumentCantBeDownloaded('Strong JS protection.');
                     }
                     if ($this->detectFakeContent($result['html'])) {
+                        $result['status'] = 206;
                         continue;
                     }
                 }
@@ -371,6 +377,7 @@ class Downloader
         }
         finally {
             $this->proxyManager->releaseProxy();
+            _log($output);
         }
     }
 
