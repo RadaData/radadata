@@ -312,11 +312,6 @@ class Downloader
                 $attempts++;
                 $result = $this->doDownload($url);
 
-                // redirect
-                if ($result['status'] > 300 && $result['status'] < 310) {
-                    continue;
-                }
-
                 // access denied
                 if ($result['status'] == 403 || $this->detectFakeContent($result['html'], '403')) {
                     $this->proxyManager->banProxy();
@@ -324,7 +319,7 @@ class Downloader
                 }
 
                 // document is missing or server might be down
-                if ($result['status'] > 400 || ($result['status'] == 200 && $this->detectFakeContent($result['html'], '404'))) {
+                if (in_array($result['status'], [204, 400, 404, 500, 502]) || $this->detectFakeContent($result['html'], '404')) {
                     $hasMoreIdentities = $this->identity->switchIdentity();
                     if ($hasMoreIdentities) {
                         $result['status'] = $result['status'] != 200 ? $result['status'] : 204;
@@ -335,18 +330,18 @@ class Downloader
                 }
 
                 // status is ok, bit document load was not finished
-                if ($result['status'] == 200 && strpos($result['html'], '</html>') === false) {
-                    $result['status'] = 205;
+                if (in_array($result['status'], [206]) || (strpos($result['html'], '</body>') === false)) {
+                    $result['status'] = 206;
                     continue;
                 }
 
                 // status is ok, but document content has errors
-                if ($result['status'] == 200 && $errors = $this->detectFakeContent($result['html'], 'error')) {
+                if ($errors = $this->detectFakeContent($result['html'], 'error')) {
                     throw new Exceptions\DocumentHasErrors($errors);
                 }
 
                 // status is ok, but document JS protected
-                if ($result['status'] == 200 && $this->detectJSProtection($result['html'])) {
+                if ($this->detectJSProtection($result['html'])) {
                     $newUrl = $this->detectJSProtection($result['html']);
                     $result = $this->doDownload($newUrl, 10);
 
@@ -354,14 +349,14 @@ class Downloader
                         throw new Exceptions\DocumentCantBeDownloaded('Strong JS protection.');
                     }
                     if ($this->detectFakeContent($result['html'])) {
-                        $result['status'] = 206;
+                        $result['status'] = 222;
                         continue;
                     }
                 }
 
                 // status is ok, no other problems
-                if ($result['status'] == 200) {
-                    $output .= '-' . $result['status'];
+                if (in_array($result['status'], [200, 300, 301, 302, 303, 304, 307])) {
+                    $output .= '-' . $result['status'] . '-OK';
 
                     if ($options['save']) {
                         $this->saveFile($save_as ?: $url, $result['html']);
@@ -405,11 +400,13 @@ class Downloader
         $request->setTimeout(60000);
         $request->addHeader('User-Agent', $this->identity->getUserAgent());
         $response = $client->getMessageFactory()->createResponse();
+
+        $start = time();
         $client->send($request, $response);
         $status = $response->getStatus();
         $html = $response->getContent();
 
-        sleep(10);
+        sleep(min(0, time() - $start));
 
         return [
             'status' => $status,
@@ -568,6 +565,9 @@ class Downloader
     {
         if ($html == '' && ($type != '403')) {
             return '{document is empty}';
+        }
+        if (strpos($html, '</body>') === false && ($type != '403' && $type != '404')) {
+            return '{document is not fully downloaded}';
         }
         if ($type == 'all') {
             $words = array_merge($this->stop_words['404'], $this->stop_words['403']);
