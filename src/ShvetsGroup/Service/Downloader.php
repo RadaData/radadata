@@ -377,7 +377,7 @@ class Downloader
 
             } while ($attempts < 5);
 
-            throw new Exceptions\DocumentCantBeDownloaded('Too many failed attempts.');
+            throw new Exceptions\DocumentCantBeDownloaded('Too many failed attempts (' . $attempts . ').');
         }
         finally {
             $this->proxyManager->releaseProxy();
