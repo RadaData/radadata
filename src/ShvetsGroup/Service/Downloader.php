@@ -348,7 +348,6 @@ class Downloader
                     if ($options['save']) {
                         $this->saveFile($save_as ?: $url, $result['html']);
                     }
-                    $this->proxyManager->releaseProxy();
 
                     return [
                         'html'      => $result['html'],
