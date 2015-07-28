@@ -3,7 +3,9 @@
 namespace ShvetsGroup\Service;
 
 use JonnyW\PhantomJs\Client as PJClient;
+use ShvetsGroup\Model\Laws\Law;
 use ShvetsGroup\Service\Proxy\ProxyManager;
+use Symfony\Component\Config\Definition\Exception\Exception;
 use Symfony\Component\DomCrawler\Crawler;
 
 class Downloader
@@ -90,11 +92,7 @@ class Downloader
                 $id = preg_replace('|/laws/show/|', '', shortURL($url));
 
                 $raw_date = $node->filterXPath('//font[@color="#004499"]')->text();
-                $raw_date = preg_replace('|([0-9]{2}\.[0-9]{2}\.[0-9]{4}).*|', '$1', $raw_date);
-                if (!preg_match('|[0-9]{2}\.[0-9]{2}\.[0-9]{4}|', $raw_date)) {
-                    throw new \Exception("Date has not been found in #{$id} at text: " . $node->text());
-                }
-                $date = date_format(date_create_from_format('d.m.Y', $raw_date), 'Y-m-d');
+                $date = $this->parseDate($raw_date, "Date has not been found in #{$id} at text: " . $node->text());
 
                 $data['laws'][$id] = [
                     'id'   => $id,
@@ -153,11 +151,7 @@ class Downloader
         $crawler->filterXPath('//h2[contains(text(), "Історія документа")]/following-sibling::dl[1]')->children()->each(function (Crawler $node) use (&$data, &$last_revision, $law_id) {
             if ($node->getNode(0)->tagName == 'dt') {
                 $raw_date = $node->filterXPath('//span[@style="color: #004499" or @style="color: #006600"]')->text();
-                $raw_date = preg_replace('|([0-9]{2}\.[0-9]{2}\.[0-9]{4}).*|', '$1', $raw_date);
-                if (!preg_match('|[0-9]{2}\.[0-9]{2}\.[0-9]{4}|', $raw_date)) {
-                    throw new \Exception("Revision date '{$raw_date}' is not valid in card of '{$law_id}'");
-                }
-                $date = date_format(date_create_from_format('d.m.Y', $raw_date), 'Y-m-d');
+                $date = $this->parseDate($raw_date, "Revision date '{$raw_date}' is not valid in card of '{$law_id}'");
                 $last_revision = count($data['revisions']);
 
                 $data['revisions'][] = [
@@ -213,21 +207,43 @@ class Downloader
      */
     public function downloadRevision($law_id, $date, $options = [])
     {
-        $url = '/laws/show/' . $law_id . '/ed' . date_format(date_create_from_format('Y-m-d', $date), 'Ymd') ;
-        $options['save_as'] = $url . '/page';
+        $law = Law::find($law_id);
+        $law_url = '/laws/show/' . $law_id;
+        $edition_part = '/ed' . date_format(date_create_from_format('Y-m-d', $date), 'Ymd');
+
+        if ($law->active_revision == $date) {
+            $url = $law_url;
+            $options['save_as'] = $law_url . $edition_part . '/page';
+        }
+        else {
+            $url = $law_url . $edition_part;
+            $options['save_as'] = $law_url . $edition_part . '/page';
+        }
 
         $data = download($url, $options);
         $crawler = crawler($data['html'])->filter('.txt');
         $data['text'] = $crawler->html();
+        $raw_date = crawler($data['html'])->filterXPath('//div[@id="pan_title"]/*/font[@color="#004499"]/b')->text();
+        $revision_date = $this->parseDate($raw_date, "Revision date has not been found in text of $url");
+
+        if ($revision_date != $date) {
+            throw new Exceptions\RevisionDateNotFound("Revision date does not match the planned date (planned: {$date}, but found {$data['revision_date']}).");
+        }
 
         $pager = $crawler->filterXPath('(//span[@class="nums"])[1]/br/preceding-sibling::a[1]');
         $page_count = $pager->count() ? $pager->text() : 1;
 
         for ($i = 2; $i <= $page_count; $i++) {
             $page_url = $url . '/page' . $i;
-            $options['save_as'] = $page_url;
-            $data = download($url, $options);
+            $options['save_as'] = $law_url . $edition_part . '/page' . $i;
+            $data = download($page_url, $options);
             $data['text'] .= crawler($data['html'])->filter('.txt')->html();
+
+            $raw_date = crawler($data['html'])->filterXPath('//div[@id="pan_title"]/*/font[@color="#004499"]/b')->text();
+            $revision_date = $this->parseDate($raw_date, "Revision date has not been found in text of $url");
+            if ($revision_date != $date) {
+                throw new Exceptions\RevisionDateNotFound("Revision date does not match the planned date (planned: {$date}, but found {$revision_date}).");
+            }
         }
 
         return $data;
@@ -585,5 +601,16 @@ class Downloader
         return false;
     }
 
-}
+    private function parseDate($radaDate, $error_text = null)
+    {
+        $raw_date = preg_replace('|([0-9]{2}\.[0-9]{2}\.[0-9]{4}).*|', '$1', $radaDate);
+        if (!preg_match('|[0-9]{2}\.[0-9]{2}\.[0-9]{4}|', $raw_date)) {
+            $error_text = $error_text ?: "Date {$radaDate} is not valid date.";
+            throw new \Exception($error_text);
+        }
+        $date = date_format(date_create_from_format('d.m.Y', $raw_date), 'Y-m-d');
 
+        return $date;
+    }
+
+}

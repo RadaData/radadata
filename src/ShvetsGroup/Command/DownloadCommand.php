@@ -6,6 +6,7 @@ use ShvetsGroup\Model\Laws;
 use ShvetsGroup\Model\Laws\Law;
 use Symfony\Component\Console as Console;
 use Illuminate\Database\Capsule\Manager as DB;
+use ShvetsGroup\Service\Exceptions;
 
 class DownloadCommand extends Console\Command\Command
 {
@@ -156,14 +157,25 @@ class DownloadCommand extends Console\Command\Command
     /**
      * Download a specific law's revision pages.
      *
-     * @param $law_id
-     * @param $date
+     * @param string $law_id
+     * @param string $date
+     * @param bool   $re_download Whether or not to re-download card page.
      */
-    function downloadRevision($law_id, $date)
+    function downloadRevision($law_id, $date, $re_download = false)
     {
         $law = Law::find($law_id);
         $revision = $law->getRevision($date);
-        $data = downloadRevision($revision->law_id, $revision->date);
+
+        if ($revision->status != Laws\Revision::NEEDS_UPDATE && !$re_download) {
+            return $revision;
+        }
+
+        try {
+            $data = downloadRevision($revision->law_id, $revision->date, ['re_download' => $re_download]);
+        } catch (Exceptions\RevisionDateNotFound $e) {
+            $this->downloadCard($law->id, true);
+            $data = downloadRevision($revision->law_id, $revision->date, ['re_download' => $re_download]);
+        }
 
         DB::transaction(function () use ($law, $revision, $data) {
             $revision->update([
