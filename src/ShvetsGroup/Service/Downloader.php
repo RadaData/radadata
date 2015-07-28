@@ -375,7 +375,9 @@ class Downloader
                 }
             } catch (\Exception $e) {
                 $output .= ('-E(' . $e->getMessage() . ')-');
-                break;
+                _log($output, 'red');
+                $this->proxyManager->releaseProxy();
+                throw new \Exception($e->getMessage());
             }
         }
 
