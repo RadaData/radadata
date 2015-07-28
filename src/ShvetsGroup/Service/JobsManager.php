@@ -149,7 +149,7 @@ class JobsManager extends ContainerAware
         $job = null;
 
         DB::transaction(function () use ($group, $service, $method, &$job) {
-            $query = Job::where('claimed', 0)->where('finished', 0)->orderBy('priority', 'DESC')->orderBy('id');
+            $query = Job::where('claimed', 0)->where('finished', 0)->orderBy('priority', 'DESC')->orderBy('id')->lockForUpdate();
             if ($group) {
                 $query->where('group', $group);
             }

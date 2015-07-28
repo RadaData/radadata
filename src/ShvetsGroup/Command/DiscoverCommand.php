@@ -161,7 +161,7 @@ class DiscoverCommand extends Console\Command\Command
             ]);
             foreach ($data['laws'] as $id => $law) {
                 Law::firstOrCreate(['id' => $id])->update(['date' => $law['date']]);
-                $this->jobsManager->add('download_command', 'downloadCard', ['id' => $id], 'download');
+                $this->jobsManager->add('download_command', 'downloadCard', ['id' => $id], 'download', 1);
             }
         } catch (Exception $e) {
             _log($e->getMessage(), 'red');

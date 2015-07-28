@@ -29,10 +29,12 @@ class Job extends Model
             $this->update(['finished' => time(), 'claimed' => 0]);
         }
         catch(\Exception $e) {
-            _log('JOB#' . $this->id . ' Type: ' . get_class($e) . ' Message: ' . $e->getMessage(), 'red');
-
-            if ($e instanceof Exceptions\JobMakeLowerPriorityException) {
+            if ($e instanceof Exceptions\JobChangePriorityException) {
+                _log('JOB#' . $this->id . ' FAILURE. Priority changed to ' . $e->newPriority, 'red');
                 $this->update(['priority' => $e->newPriority]);
+            }
+            else {
+                _log('JOB#' . $this->id . ' Type: ' . str_replace('ShvetsGroup\Service\Exceptions\\', '', get_class($e)) . ' Message: ' . $e->getMessage(), 'red');
             }
         }
     }

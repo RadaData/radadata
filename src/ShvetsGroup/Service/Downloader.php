@@ -295,71 +295,76 @@ class Downloader
             }
         }
 
-        $output = ($this->proxyManager->getProxyAddress() . '/' . $this->proxyManager->getProxyIp() . ' → ' . $output . ' @');
-        _log($output);
+        try {
+            $output = ($this->proxyManager->getProxyAddress() . '/' . $this->proxyManager->getProxyIp() . ' → ' . $output . ' @');
+            _log($output);
 
-        $attempts = 0;
-        do {
-            $attempts++;
-            $result = $this->doDownload($url);
+            $attempts = 0;
+            do {
+                $attempts++;
+                $result = $this->doDownload($url);
 
-            // redirect
-            if ($result['status'] > 300 && $result['status'] < 310) {
-                continue;
-            }
-
-            // access denied
-            if ($result['status'] == 403 || $this->detectFakeContent($result['html'], '403')) {
-                $this->proxyManager->banProxy();
-                throw new Exceptions\ProxyBanned($this->proxyManager->getProxyIp());
-            }
-
-            // document is missing or server might be down
-            if ($result['status'] > 400 || ($result['status'] == 200 && $this->detectFakeContent($result['html'], '404'))) {
-                $hasMoreIdentities = $this->identity->switchIdentity();
-                if ($hasMoreIdentities) {
-                    continue;
-                } else {
-                    throw new Exceptions\DocumentIsMissing();
-                }
-            }
-
-            // document is ok, but has errors
-            if ($result['status'] == 200 && $this->detectFakeContent($result['html'], 'error')) {
-                throw new Exceptions\DocumentHasErrors();
-            }
-
-            // document is ok, but JS protected
-            if ($result['status'] == 200 && $this->detectJSProtection($result['html'])) {
-                $newUrl = $this->detectJSProtection($result['html']);
-                $result = $this->doDownload($newUrl, 10);
-
-                if ($this->detectJSProtection($result['html'])) {
-                    throw new Exceptions\DocumentCantBeDownloaded();
-                }
-                if ($this->detectFakeContent($result['html'])) {
+                // redirect
+                if ($result['status'] > 300 && $result['status'] < 310) {
                     continue;
                 }
-            }
 
-            // document is ok
-            if ($result['status'] == 200) {
-                if ($options['save']) {
-                    $this->saveFile($save_as ?: $url, $result['html']);
+                // access denied
+                if ($result['status'] == 403 || $this->detectFakeContent($result['html'], '403')) {
+                    $this->proxyManager->banProxy();
+                    throw new Exceptions\ProxyBanned($this->proxyManager->getProxyIp());
                 }
-                $this->proxyManager->releaseProxy();
 
-                return [
-                    'html'      => $result['html'],
-                    'timestamp' => time()
-                ];
-            }
+                // document is missing or server might be down
+                if ($result['status'] > 400 || ($result['status'] == 200 && $this->detectFakeContent($result['html'], '404'))) {
+                    $hasMoreIdentities = $this->identity->switchIdentity();
+                    if ($hasMoreIdentities) {
+                        continue;
+                    } else {
+                        throw new Exceptions\DocumentIsMissing();
+                    }
+                }
 
-            throw new Exceptions\UnknownProblem("Download status is {$result['status']}.", $this->shortURL($url), isset($data['html']) ? $data['html'] : '{NO DATA}');
+                // document is ok, but has errors
+                if ($result['status'] == 200 && $this->detectFakeContent($result['html'], 'error')) {
+                    throw new Exceptions\DocumentHasErrors();
+                }
 
-        } while ($attempts < 3);
+                // document is ok, but JS protected
+                if ($result['status'] == 200 && $this->detectJSProtection($result['html'])) {
+                    $newUrl = $this->detectJSProtection($result['html']);
+                    $result = $this->doDownload($newUrl, 10);
 
-        throw new Exceptions\DocumentCantBeDownloaded();
+                    if ($this->detectJSProtection($result['html'])) {
+                        throw new Exceptions\DocumentCantBeDownloaded();
+                    }
+                    if ($this->detectFakeContent($result['html'])) {
+                        continue;
+                    }
+                }
+
+                // document is ok
+                if ($result['status'] == 200) {
+                    if ($options['save']) {
+                        $this->saveFile($save_as ?: $url, $result['html']);
+                    }
+                    $this->proxyManager->releaseProxy();
+
+                    return [
+                        'html'      => $result['html'],
+                        'timestamp' => time()
+                    ];
+                }
+
+                throw new Exceptions\UnknownProblem("Download status is {$result['status']}.", $this->shortURL($url), isset($data['html']) ? $data['html'] : '{NO DATA}');
+
+            } while ($attempts < 3);
+
+            throw new Exceptions\DocumentCantBeDownloaded();
+        }
+        finally {
+            $this->proxyManager->releaseProxy();
+        }
     }
 
     /**

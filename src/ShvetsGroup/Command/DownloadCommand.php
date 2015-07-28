@@ -68,7 +68,7 @@ class DownloadCommand extends Console\Command\Command
                 $this->jobsManager->add('download_command', 'downloadCard', [
                     'id'          => $law->id,
                     're_download' => $law->status == Law::DOWNLOADED_BUT_NEEDS_UPDATE
-                ], 'download');
+                ], 'download', 1);
             }
         });
         Laws\Revision::where('status', Laws\Revision::NEEDS_UPDATE)->chunk(200, function ($revisions) {
@@ -103,7 +103,7 @@ class DownloadCommand extends Console\Command\Command
                 'check_related' => $law->status == Law::NOT_DOWNLOADED && !max_date()
             ]);
         } catch (\Exception $e) {
-            throw new JobChangePriorityException(-5);
+            throw new Exceptions\JobChangePriorityException(-5);
         }
 
         DB::transaction(function () use ($law, $card) {
@@ -145,7 +145,7 @@ class DownloadCommand extends Console\Command\Command
                     $this->jobsManager->add('download_command', 'downloadCard', [
                         'id'          => $l['id'],
                         're_download' => true
-                    ], 'download');
+                    ], 'download', 2);
                 }
             }
 
@@ -181,7 +181,7 @@ class DownloadCommand extends Console\Command\Command
             $this->downloadCard($law->id, true);
             $data = downloadRevision($revision->law_id, $revision->date, ['re_download' => $re_download]);
         } catch (\Exception $e) {
-            throw new JobChangePriorityException(-10);
+            throw new Exceptions\JobChangePriorityException(-10);
         }
 
         DB::transaction(function () use ($law, $revision, $data) {
