@@ -304,9 +304,11 @@ class Downloader
             $result = [];
             $attempts = 0;
             do {
+                // log failed stages when loop restarts
                 if ($result) {
                     $output .= '-' . $result['status'];
                 }
+
                 $attempts++;
                 $result = $this->doDownload($url);
 
@@ -359,6 +361,8 @@ class Downloader
 
                 // status is ok, no other problems
                 if ($result['status'] == 200) {
+                    $output .= '-' . $result['status'];
+
                     if ($options['save']) {
                         $this->saveFile($save_as ?: $url, $result['html']);
                     }
