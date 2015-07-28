@@ -163,6 +163,9 @@ class ProxyManager
         if (!$this->useProxy()) {
             return;
         }
+        if (!isset($this->proxy)) {
+            return;
+        }
 
         _log('Proxy released: ' . $this->proxy->ip);
         DB::table('proxy')->where('address', $this->getProxyAddress())->update(['in_use' => 0, 'last_used' => round(microtime(true) * 100)]);
