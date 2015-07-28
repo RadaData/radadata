@@ -89,6 +89,7 @@ class DownloadCommand extends Console\Command\Command
      * @param bool   $re_download Whether or not to re-download card page.
      *
      * @return Law
+     * @throws Exceptions\JobChangePriorityException
      */
     function downloadCard($id, $re_download = false)
     {
@@ -103,7 +104,9 @@ class DownloadCommand extends Console\Command\Command
                 'check_related' => $law->status == Law::NOT_DOWNLOADED && !max_date()
             ]);
         } catch (\Exception $e) {
-            throw new Exceptions\JobChangePriorityException(-5);
+            $message = str_replace('ShvetsGroup\Service\Exceptions\\', '', get_class($e)) .
+                ($e->getMessage() ? ': ' . $e->getMessage() : '');
+            throw new Exceptions\JobChangePriorityException($message, -5);
         }
 
         DB::transaction(function () use ($law, $card) {
@@ -165,6 +168,9 @@ class DownloadCommand extends Console\Command\Command
      * @param string $law_id
      * @param string $date
      * @param bool   $re_download Whether or not to re-download card page.
+     *
+     * @return Laws\Revision
+     * @throws Exceptions\JobChangePriorityException
      */
     function downloadRevision($law_id, $date, $re_download = false)
     {
@@ -176,12 +182,17 @@ class DownloadCommand extends Console\Command\Command
         }
 
         try {
-            $data = downloadRevision($revision->law_id, $revision->date, ['re_download' => $re_download]);
-        } catch (Exceptions\RevisionDateNotFound $e) {
-            $this->downloadCard($law->id, true);
-            $data = downloadRevision($revision->law_id, $revision->date, ['re_download' => $re_download]);
-        } catch (\Exception $e) {
-            throw new Exceptions\JobChangePriorityException($e->getMessage(), -10);
+            try {
+                $data = downloadRevision($revision->law_id, $revision->date, ['re_download' => $re_download]);
+            } catch (Exceptions\RevisionDateNotFound $e) {
+                $this->downloadCard($law->id, true);
+                $data = downloadRevision($revision->law_id, $revision->date, ['re_download' => $re_download]);
+            }
+        }
+        catch (\Exception $e) {
+            $message = str_replace('ShvetsGroup\Service\Exceptions\\', '', get_class($e)) .
+                ($e->getMessage() ? ': ' . $e->getMessage() : '');
+            throw new Exceptions\JobChangePriorityException($message, -10);
         }
 
         DB::transaction(function () use ($law, $revision, $data) {
