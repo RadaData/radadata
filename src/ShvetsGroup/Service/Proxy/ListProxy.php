@@ -47,5 +47,8 @@ class ListProxy implements IProxyProvider
 
     public function reset()
     {
+        if (file_exists($this->banned_list_path)) {
+            unlink($this->banned_list_path);
+        }
     }
 }
