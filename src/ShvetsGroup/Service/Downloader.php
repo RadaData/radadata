@@ -406,7 +406,7 @@ class Downloader
         $status = $response->getStatus();
         $html = $response->getContent();
 
-        sleep(min(0, time() - $start));
+        sleep(max(10, min(0, time() - $start)));
 
         return [
             'status' => $status,
