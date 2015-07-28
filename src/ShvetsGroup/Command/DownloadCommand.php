@@ -90,6 +90,7 @@ class DownloadCommand extends Console\Command\Command
      *
      * @return Law
      * @throws Exceptions\JobChangePriorityException
+     * @throws Exceptions\ProxyBanned
      */
     function downloadCard($id, $re_download = false)
     {
@@ -103,7 +104,11 @@ class DownloadCommand extends Console\Command\Command
                 're_download'   => $re_download || $this->re_download,
                 'check_related' => $law->status == Law::NOT_DOWNLOADED && !max_date()
             ]);
-        } catch (\Exception $e) {
+        }
+        catch (Exceptions\ProxyBanned $e) {
+            throw $e;
+        }
+        catch (\Exception $e) {
             $message = str_replace('ShvetsGroup\Service\Exceptions\\', '', get_class($e)) .
                 ($e->getMessage() ? ': ' . $e->getMessage() : '');
             throw new Exceptions\JobChangePriorityException($message, -5);
@@ -171,6 +176,7 @@ class DownloadCommand extends Console\Command\Command
      *
      * @return Laws\Revision
      * @throws Exceptions\JobChangePriorityException
+     * @throws Exceptions\ProxyBanned
      */
     function downloadRevision($law_id, $date, $re_download = false)
     {
@@ -188,6 +194,9 @@ class DownloadCommand extends Console\Command\Command
                 $this->downloadCard($law->id, true);
                 $data = downloadRevision($revision->law_id, $revision->date, ['re_download' => $re_download]);
             }
+        }
+        catch (Exceptions\ProxyBanned $e) {
+            throw $e;
         }
         catch (\Exception $e) {
             $message = str_replace('ShvetsGroup\Service\Exceptions\\', '', get_class($e)) .

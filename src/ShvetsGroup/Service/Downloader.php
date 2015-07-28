@@ -281,7 +281,6 @@ class Downloader
         $save_as = $options['save_as'] ? $options['save_as'] : null;
 
         $output = $this->shortURL($url) . ': ';
-        $style = 'default';
 
         if ($this->isDownloaded($save_as ?: $url) && !$options['re_download']) {
             $file_path = $this->URL2path($save_as ?: $url);

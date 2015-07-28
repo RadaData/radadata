@@ -35,9 +35,14 @@ class ListProxy implements IProxyProvider
     public function ban($ip)
     {
         unset($this->proxy_list[$ip]);
-        $banned = file(BASE_PATH . 'app/banned_proxies.txt', FILE_IGNORE_NEW_LINES);
+        if (file_exists($this->banned_list_path)) {
+            $banned = file($this->banned_list_path, FILE_IGNORE_NEW_LINES);
+        }
+        else {
+            $banned = [];
+        }
         $banned[] = $ip;
-        file_put_contents(BASE_PATH . 'app/banned_proxies.txt', implode("\n",$banned));
+        file_put_contents($this->banned_list_path, implode("\n",$banned));
     }
 
     public function reset()

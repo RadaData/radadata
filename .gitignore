@@ -4,3 +4,4 @@ bin/
 app/config/services_prod.yml
 vendor/
 logs/
+app/banned_proxies.txt

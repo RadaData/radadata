@@ -126,21 +126,17 @@ class DiscoverCommand extends Console\Command\Command
      */
     public function discoverDailyLawList($law_list_url, $date, $re_download = false)
     {
-        try {
-            $data = downloadList($law_list_url, [
-                're_download' => $re_download || $this->re_download,
-                'save' => $date != date('Y-m-d')
-            ]);
-            for ($i = 1; $i <= $data['page_count']; $i++) {
-                $this->jobsManager->add('discover_command', 'discoverDailyLawListPage', [
-                    'law_list_url' => $law_list_url . ($i > 1 ? $i : ''),
-                    'date' => $date,
-                    'page_num' => $i,
-                    're_download' => $re_download
-                ], 'discover');
-            }
-        } catch (Exception $e) {
-            _log($e->getMessage(), 'red');
+        $data = downloadList($law_list_url, [
+            're_download' => $re_download || $this->re_download,
+            'save' => $date != date('Y-m-d')
+        ]);
+        for ($i = 1; $i <= $data['page_count']; $i++) {
+            $this->jobsManager->add('discover_command', 'discoverDailyLawListPage', [
+                'law_list_url' => $law_list_url . ($i > 1 ? $i : ''),
+                'date' => $date,
+                'page_num' => $i,
+                're_download' => $re_download
+            ], 'discover');
         }
     }
 
@@ -154,17 +150,13 @@ class DiscoverCommand extends Console\Command\Command
      */
     public function discoverDailyLawListPage($law_list_url, $page_num, $date, $re_download = false)
     {
-        try {
-            $data = downloadList($law_list_url, [
-                're_download' => $page_num > 1 ? ($re_download || $this->re_download) : false,
-                'save' => $date != date('Y-m-d')
-            ]);
-            foreach ($data['laws'] as $id => $law) {
-                Law::firstOrCreate(['id' => $id])->update(['date' => $law['date']]);
-                $this->jobsManager->add('download_command', 'downloadCard', ['id' => $id], 'download', 1);
-            }
-        } catch (Exception $e) {
-            _log($e->getMessage(), 'red');
+        $data = downloadList($law_list_url, [
+            're_download' => $page_num > 1 ? ($re_download || $this->re_download) : false,
+            'save' => $date != date('Y-m-d')
+        ]);
+        foreach ($data['laws'] as $id => $law) {
+            Law::firstOrCreate(['id' => $id])->update(['date' => $law['date']]);
+            $this->jobsManager->add('download_command', 'downloadCard', ['id' => $id], 'download', 1);
         }
     }
 }
